@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 import os
 
 app = Flask(__name__)
@@ -7,6 +7,11 @@ app = Flask(__name__)
 @app.route('/ping', methods=['GET'])
 def ping():
     return 'sup'
+
+
+@app.route('/explorer', methods=['GET'])
+def explorer():
+    return render_template('explorer.html')
 
 
 if __name__ == '__main__':
