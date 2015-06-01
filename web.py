@@ -44,13 +44,22 @@ def retrieve_media(media_id):
             settings.S3_HOST, '%s/%s' % (settings.S3_BUCKET_NAME, media_id)))
 
 
+@app.route('/personality', methods=['GET', 'POST'])
+def personality():
+    if 'GET' == request.method:
+        pass
+
+    if 'POST' == request.method:
+        pass
+
+
 @app.route('/twitter-user', methods=['GET'])
 def twitter_user():
     user = externals.twitter_user(request.args['screen_name'])
     return json_response({
         'name': user.get('name'),
         'description': user.get('description'),
-        'profile_image_url': (
+        'profile_image_url_original': (
             user.get('profile_image_url').replace('_normal', '_400x400'))
     })
 
