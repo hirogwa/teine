@@ -9,7 +9,6 @@ var EpisodeEditorView = Backbone.View.extend({
         'change input#episode-title': 'changeTitle',
         'change input#episode-summary': 'changeSummary',
         'change input#episode-description': 'changeDescription',
-        'change input#episode-audio': 'changeAudio',
         'change input#schedule-datetime': 'changeScheduleDatetime',
 
         'click button#upload-episode-audio': 'uploadEpisodeAudio',
@@ -64,7 +63,6 @@ var EpisodeEditorView = Backbone.View.extend({
 
             media.upload();
         }
-        console.log(file);
     },
 
     changeTitle: function(e) {
@@ -83,10 +81,6 @@ var EpisodeEditorView = Backbone.View.extend({
         this.episode.set({
             description: e.currentTarget.value
         });
-    },
-
-    changeAudio: function(e) {
-        console.log(e);
     },
 
     changeScheduleDatetime: function(e) {

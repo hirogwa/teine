@@ -27,10 +27,13 @@ var linkListViewTemplate = require('./link-list-view.html');
 var LinkListView = Backbone.View.extend({
     events: {
         'click button#add-link': 'addLink',
+        'change input#new-link-url': 'changeUrl'
     },
 
     initialize: function() {
-        _.bindAll(this, 'render', 'renderAdd', 'addLink');
+        _.bindAll(this, 'render', 'renderAdd',
+                  'addLink', 'changeUrl',
+                  'titleElement', 'urlElement');
         this.template = linkListViewTemplate;
 
         this.collection.on('add', this.renderAdd);
@@ -52,12 +55,43 @@ var LinkListView = Backbone.View.extend({
         return this;
     },
 
+    urlElement: function() {
+        return $('#new-link-url');
+    },
+
+    titleElement: function() {
+        return $('#new-link-title');
+    },
+
     addLink: function(e) {
         this.collection.addLink({
-            title: $('#new-link-title').val(),
-            url: $('#new-link-url').val()
+            title: this.titleElement().val(),
+            url: this.urlElement().val()
         });
+        this.titleElement().val('');
+        this.urlElement().val('');
         return this;
+    },
+
+    changeUrl: function(e) {
+        var url = e.currentTarget.value;
+        $.ajax({
+            url: '/link-info',
+            method: 'GET',
+            data: {
+                url: url
+            },
+            success: function(data) {
+                if (data.result === 'success') {
+                    titleElement().val(data.title);
+                } else {
+                    console.log(data.reason);
+                }
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
     }
 });
 

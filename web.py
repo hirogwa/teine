@@ -1,7 +1,10 @@
 from flask import Flask, Response, render_template, request, redirect
+from bs4 import BeautifulSoup
 import json
 import os
+import urllib.error
 import urllib.parse
+import urllib.request
 
 import externals
 import settings
@@ -42,6 +45,39 @@ def retrieve_media(media_id):
     return redirect(
         urllib.parse.urljoin(
             settings.S3_HOST, '%s/%s' % (settings.S3_BUCKET_NAME, media_id)))
+
+
+@app.route('/link-info', methods=['GET'])
+def link_info():
+    try:
+        req = urllib.request.Request(request.args['url'], method='GET')
+        resp = urllib.request.urlopen(req)
+    except ValueError:
+        return json_response({
+            'result': 'error',
+            'reason': 'bad url'
+        })
+    except urllib.error.URLError:
+        result = {
+            'result': 'error',
+            'reason': 'no exist'
+        }
+        return json_response(result)
+
+    if resp.status == 200:
+        content = resp.read()
+        soup = BeautifulSoup(content)
+        title = soup.title
+        result = {
+            'result': 'success',
+            'title': title.string if title else ''
+        }
+    else:
+        result = {
+            'result': 'error',
+            'response_code': 'resp.status'
+        }
+    return json_response(result)
 
 
 @app.route('/personality', methods=['GET', 'POST'])
