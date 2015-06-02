@@ -36,12 +36,10 @@ var EpisodeEditorView = Backbone.View.extend({
 
         this.template = episodeEditorTemplate;
         this.render();
-        console.log('init');
     },
 
     render: function() {
         this.$el.html(this.template({
-            people: this.episode.get('people')
         }));
         this.$('#episode-personality-list').append(this.peopleView.render().el);
         this.$('#episode-external-links').append(this.linkListView.render().el);

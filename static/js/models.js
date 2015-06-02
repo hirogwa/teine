@@ -78,7 +78,16 @@ var Episode = Backbone.Model.extend({
     }
 });
 
+var Show = Backbone.Model.extend({
+    url: '/show',
+
+    defaults: {
+        regularHosts: new People()
+    }
+});
+
 module.exports = {
+    Show: Show,
     Media: Media,
     Link: Link,
     Links: Links,

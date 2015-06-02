@@ -74,6 +74,7 @@ var LinkListView = Backbone.View.extend({
     },
 
     changeUrl: function(e) {
+        var self = this;
         var url = e.currentTarget.value;
         $.ajax({
             url: '/link-info',
@@ -83,7 +84,7 @@ var LinkListView = Backbone.View.extend({
             },
             success: function(data) {
                 if (data.result === 'success') {
-                    titleElement().val(data.title);
+                    self.titleElement().val(data.title);
                 } else {
                     console.log(data.reason);
                 }

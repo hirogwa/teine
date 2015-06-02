@@ -13,6 +13,15 @@ import s3_store
 app = Flask(__name__)
 
 
+@app.route('/show', methods=['GET', 'POST'])
+def show():
+    if 'GET' == request.method:
+        return render_template('show.html')
+
+    if 'POST' == request.method:
+        return json_response(request.get_json())
+
+
 @app.route('/episode', methods=['GET', 'POST'])
 def episode():
     if 'POST' == request.method:
