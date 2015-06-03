@@ -13,7 +13,7 @@ var ShowEditorView = Backbone.View.extend({
         _.bindAll(this, 'render', 'saveShow');
         this.show = new models.Show();
         this.peopleView = new views.PersonalityListView({
-            collection: this.show.get('regularHosts')
+            collection: this.show.get('show_hosts')
         });
 
         this.template = showEditorTemplate;

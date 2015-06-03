@@ -39,7 +39,7 @@ var People = Backbone.Collection.extend({
     addPersonalityFromTwitter: function(params) {
         this.add(new Personality({
             source: 'twitter',
-            id: params.screen_name,
+            alias: params.screen_name,
             name: params.name,
             description: params.description,
             profile_image_url: params.profile_image_url
@@ -82,7 +82,7 @@ var Show = Backbone.Model.extend({
     url: '/show',
 
     defaults: {
-        regularHosts: new People()
+        show_hosts: new People()
     }
 });
 

@@ -7,6 +7,7 @@ import urllib.parse
 import urllib.request
 
 import externals
+import models
 import settings
 import s3_store
 
@@ -14,12 +15,25 @@ app = Flask(__name__)
 
 
 @app.route('/show', methods=['GET', 'POST'])
-def show():
+def show_editor():
     if 'GET' == request.method:
         return render_template('show.html')
 
     if 'POST' == request.method:
-        return json_response(request.get_json())
+        # TODO
+        user = models.User.create_test_user()
+        show = models.Show.create_new(user, **request.get_json())
+        show.save()
+        return json_response(show.export())
+
+
+@app.route('/show/<show_id>', methods=['GET'])
+def show(show_id):
+    if 'GET' == request.method:
+        # TODO
+        user = models.User.create_test_user()
+        show = models.Show.get_by_id(show_id, user)
+        return json_response(show.export())
 
 
 @app.route('/episode', methods=['GET', 'POST'])
