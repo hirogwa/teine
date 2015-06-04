@@ -9,20 +9,49 @@ var ShowEditorView = Backbone.View.extend({
         'click button#save-show': 'saveShow'
     },
 
-    initialize: function() {
+    initialize: function(args) {
+        var options = args || {};
         _.bindAll(this, 'render', 'saveShow');
-        this.show = new models.Show();
-        this.peopleView = new views.PersonalityListView({
-            collection: this.show.get('show_hosts')
-        });
-
         this.template = showEditorTemplate;
-        this.render();
+
+        var self = this;
+        new Promise(function(resolve, reject) {
+            if (options.show_id) {
+                $.ajax({
+                    url: '/show_data',
+                    data: {
+                        show_id: options.show_id
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log(data);
+                        self.show = models.Show.existingData(data);
+                        resolve(data);
+                    },
+                    error: function(data) {
+                        reject(data);
+                    }
+                });
+            } else {
+                self.show = new models.Show();
+                resolve();
+            }
+        }).then(function() {
+            self.peopleView = new views.PersonalityListView({
+                collection: self.show.get('show_hosts')
+            });
+            self.render();
+        }, function() {
+            console.log('oops');
+        });
     },
 
     render: function() {
         console.log('rendering show editor');
         this.$el.html(this.template({
+            showTitle: this.show.get('title'),
+            showTagline: this.show.get('tagline'),
+            showDescription: this.show.get('description')
         }));
         this.$('#show-regular-hosts').append(this.peopleView.render().el);
 
@@ -41,4 +70,6 @@ var ShowEditorView = Backbone.View.extend({
     }
 });
 
-new ShowEditorView();
+module.exports = {
+    ShowEditorView: ShowEditorView
+};

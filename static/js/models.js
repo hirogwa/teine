@@ -33,6 +33,15 @@ var Links  = Backbone.Collection.extend({
 
 var Personality = Backbone.Model;
 
+Personality.existingData = function(input) {
+    return new Personality({
+        alias: input.alias,
+        name: input.name,
+        description: input.description,
+        profile_image_url: input.profile_image_url
+    });
+};
+
 var People = Backbone.Collection.extend({
     model: Personality,
 
@@ -78,6 +87,16 @@ var Episode = Backbone.Model.extend({
     }
 });
 
+Episode.existingData = function(input) {
+    var e =  new Episode();
+    // TODO
+    return e;
+};
+
+var Episodes = Backbone.Collection.extend({
+    model: Episode
+});
+
 var Show = Backbone.Model.extend({
     url: '/show',
 
@@ -85,6 +104,28 @@ var Show = Backbone.Model.extend({
         show_hosts: new People()
     }
 });
+
+Show.existingData = function(input) {
+    var s = new Show();
+    var show_hosts = new People();
+    input.show_hosts.forEach(function(p) {
+        show_hosts.add(Personality.existingData(p));
+    });
+    var episodes = new Episodes();
+    input.episodes.forEach(function(e) {
+        episodes.add(Episode.existingData(e));
+    });
+
+    s.set({
+        show_id: input.show_id,
+        title: input.title,
+        tagline: input.tagline,
+        description: input.description,
+        show_hosts: show_hosts,
+        episodes: episodes
+    });
+    return s;
+};
 
 module.exports = {
     Show: Show,

@@ -14,10 +14,13 @@ import s3_store
 app = Flask(__name__)
 
 
-@app.route('/show', methods=['GET', 'POST'])
-def show_editor():
+@app.route('/show/<show_id>', methods=['GET', 'POST'])
+def show_editor(show_id):
     if 'GET' == request.method:
-        return render_template('show.html')
+        if show_id == 'new':
+            return render_template('show.html')
+        else:
+            return render_template('show.html', show_id=show_id)
 
     if 'POST' == request.method:
         # TODO
@@ -27,9 +30,10 @@ def show_editor():
         return json_response(show.export())
 
 
-@app.route('/show/<show_id>', methods=['GET'])
-def show(show_id):
+@app.route('/show_data', methods=['GET'])
+def show_data():
     if 'GET' == request.method:
+        show_id = request.args['show_id']
         # TODO
         user = models.User.create_test_user()
         show = models.Show.get_by_id(show_id, user)
