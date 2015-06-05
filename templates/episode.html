@@ -9,4 +9,16 @@
 <div id="episode-editor">
 </div>
 
+<script type="text/javascript">
+    $(function() {
+        {% if episode_id %}
+        new teine.EpisodeEditorView({
+            episode_id: "{{ episode_id }}"
+        });
+        {% else %}
+        new teine.EpisodeEditorView();
+        {% endif %}
+    });
+</script>
+
 {% endblock %}

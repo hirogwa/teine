@@ -19,27 +19,54 @@ var EpisodeEditorView = Backbone.View.extend({
         'click button#schedule': 'schedule'
     },
 
-    initialize: function() {
+    initialize: function(args) {
+        var options = args || {};
         _.bindAll(this, 'render',
                   'changeTitle', 'changeSummary', 'changeDescription',
                   'changeScheduleDatetime',
                   'addPersonality',
                   'publish', 'saveDraft', 'schedule');
-
-        this.episode = new models.Episode();
-        this.peopleView = new views.PersonalityListView({
-            collection: this.episode.get('people')
-        });
-        this.linkListView = new views.LinkListView({
-            collection: this.episode.get('links')
-        });
-
         this.template = episodeEditorTemplate;
-        this.render();
+
+        var self = this;
+        new Promise(function(resolve, reject) {
+            if (options.episode_id) {
+                $.ajax({
+                    url: '/episode',
+                    data: {
+                        episode_id: options.episode_id
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        self.episode = models.Episode.existingData(data);
+                        resolve(data);
+                    },
+                    error: function(data) {
+                        reject(data);
+                    }
+                });
+            } else {
+                self.episode = new models.Episode();
+                resolve();
+            }
+        }).then(function() {
+            self.peopleView = new views.PersonalityListView({
+                collection: self.episode.get('people')
+            });
+            self.linkListView = new views.LinkListView({
+                collection: self.episode.get('links')
+            });
+            self.render();
+        }, function() {
+            console.log('failed to initialize episode editor');
+        });
     },
 
     render: function() {
         this.$el.html(this.template({
+            episodeTitle: this.episode.get('title'),
+            episodeSummary: this.episode.get('summary'),
+            episodeDescription: this.episode.get('description')
         }));
         this.$('#episode-personality-list').append(this.peopleView.render().el);
         this.$('#episode-external-links').append(this.linkListView.render().el);
@@ -106,4 +133,6 @@ var EpisodeEditorView = Backbone.View.extend({
     }
 });
 
-new EpisodeEditorView();
+module.exports = {
+    EpisodeEditorView: EpisodeEditorView
+};

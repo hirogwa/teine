@@ -33,27 +33,22 @@ var Links  = Backbone.Collection.extend({
 
 var Personality = Backbone.Model;
 
-Personality.existingData = function(input) {
-    return new Personality({
-        alias: input.alias,
-        name: input.name,
-        description: input.description,
-        profile_image_url: input.profile_image_url
-    });
-};
-
 var People = Backbone.Collection.extend({
     model: Personality,
 
-    addPersonalityFromTwitter: function(params) {
+    addPersonality: function(params) {
         this.add(new Personality({
-            source: 'twitter',
+            source: params.source,
             alias: params.screen_name,
             name: params.name,
             description: params.description,
             profile_image_url: params.profile_image_url
                 .replace('_normal', '_400x400')
         }));
+    },
+
+    addPersonalityFromTwitter: function(params) {
+        params.source = 'twitter';
     }
 });
 
@@ -88,9 +83,23 @@ var Episode = Backbone.Model.extend({
 });
 
 Episode.existingData = function(input) {
-    var e =  new Episode();
-    // TODO
-    return e;
+    var guests = new People();
+    input.guests.forEach(function(p) {
+        guests.addPersonality(p);
+    });
+    var links = new Links();
+    input.links.forEach(function(l) {
+        links.addLink(l);
+    });
+
+    return new Episode({
+        episode_id: input.episode_id,
+        title: input.title,
+        summary: input.summary,
+        description: input.description,
+        people: guests,
+        links: links
+    });
 };
 
 var Episodes = Backbone.Collection.extend({
@@ -109,7 +118,7 @@ Show.existingData = function(input) {
     var s = new Show();
     var show_hosts = new People();
     input.show_hosts.forEach(function(p) {
-        show_hosts.add(Personality.existingData(p));
+        show_hosts.addPersonality(p);
     });
     var episodes = new Episodes();
     input.episodes.forEach(function(e) {

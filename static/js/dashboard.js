@@ -1,5 +1,5 @@
 teine = {};
 $(function() {
-    require('./episode-editor.js');
+    teine.EpisodeEditorView = require('./episode-editor.js').EpisodeEditorView;
     teine.ShowEditorView = require('./show-editor.js').ShowEditorView;
 });

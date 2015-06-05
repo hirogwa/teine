@@ -11,9 +11,13 @@
 
 <script type="text/javascript">
     $(function() {
+        {% if show_id %}
         new teine.ShowEditorView({
             show_id: "{{ show_id }}"
         });
+        {% else %}
+        new teine.ShowEditorView();
+        {% endif %}
     });
 </script>
-{% endblock %}
+    {% endblock %}

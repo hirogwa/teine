@@ -18,7 +18,7 @@ var ShowEditorView = Backbone.View.extend({
         new Promise(function(resolve, reject) {
             if (options.show_id) {
                 $.ajax({
-                    url: '/show_data',
+                    url: '/show',
                     data: {
                         show_id: options.show_id
                     },

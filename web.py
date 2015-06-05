@@ -14,24 +14,20 @@ import s3_store
 app = Flask(__name__)
 
 
-@app.route('/show/<show_id>', methods=['GET', 'POST'])
-def show_editor(show_id):
+@app.route('/show/new', methods=['GET'])
+def create_show():
     if 'GET' == request.method:
-        if show_id == 'new':
-            return render_template('show.html')
-        else:
-            return render_template('show.html', show_id=show_id)
-
-    if 'POST' == request.method:
-        # TODO
-        user = models.User.create_test_user()
-        show = models.Show.create_new(user, **request.get_json())
-        show.save()
-        return json_response(show.export())
+        return render_template('show.html')
 
 
-@app.route('/show_data', methods=['GET'])
-def show_data():
+@app.route('/show/<show_id>', methods=['GET'])
+def load_show(show_id):
+    if 'GET' == request.method:
+        return render_template('show.html', show_id=show_id)
+
+
+@app.route('/show', methods=['GET', 'POST'])
+def show():
     if 'GET' == request.method:
         show_id = request.args['show_id']
         # TODO
@@ -39,17 +35,35 @@ def show_data():
         show = models.Show.get_by_id(show_id, user)
         return json_response(show.export())
 
+    if 'POST' == request.method:
+        user = models.User.create_test_user()
+        show = models.Show.create_new(user, **request.get_json())
+        show.save()
+        return json_response(show.export())
+
+
+@app.route('/episode/new', methods=['GET'])
+def create_episode():
+    if 'GET' == request.method:
+        return render_template('episode.html')
+
+
+@app.route('/episode/<episode_id>', methods=['GET'])
+def load_episode(episode_id):
+    if 'GET' == request.method:
+        return render_template('episode.html', episode_id=episode_id)
+
 
 @app.route('/episode', methods=['GET', 'POST'])
 def episode():
     if 'POST' == request.method:
-        print(request.form)
-        print(request.args)
-        print(request.get_json())
-        return 'post_data'
+        # TODO
+        ep = models.Episode.create_new(None, **request.get_json()).save()
+        return json_response(ep.export())
 
     if 'GET' == request.method:
-        return render_template('episode.html')
+        ep = models.Episode.get_by_id(request.args['episode_id'])
+        return json_response(ep.export())
 
 
 @app.route('/media', methods=['POST'])
@@ -137,6 +151,9 @@ def twitter_user_search():
 
 @app.route('/ping', methods=['GET'])
 def ping():
+    print(request.form)
+    print(request.args)
+    print(request.get_json())
     return 'sup'
 
 
