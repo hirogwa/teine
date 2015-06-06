@@ -54,6 +54,12 @@ def load_episode(episode_id):
         return render_template('episode.html', episode_id=episode_id)
 
 
+@app.route('/episode-list', methods=['GET'])
+def episode_list():
+    if 'GET' == request.method:
+        return render_template('episode-list.html')
+
+
 @app.route('/episode', methods=['GET', 'POST'])
 def episode():
     if 'POST' == request.method:
@@ -64,6 +70,13 @@ def episode():
     if 'GET' == request.method:
         ep = models.Episode.get_by_id(request.args['episode_id'])
         return json_response(ep.export())
+
+
+@app.route('/episodes', methods=['GET'])
+def episodes():
+    if 'GET' == request.method:
+        return json_response(list(
+            map(lambda x: x.export(), models.Episode.get_list())))
 
 
 @app.route('/media', methods=['POST'])

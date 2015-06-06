@@ -39,7 +39,7 @@ var People = Backbone.Collection.extend({
     addPersonality: function(params) {
         this.add(new Personality({
             source: params.source,
-            alias: params.screen_name,
+            alias: params.screen_name || params.alias,
             name: params.name,
             description: params.description,
             profile_image_url: params.profile_image_url
@@ -106,6 +106,14 @@ var Episodes = Backbone.Collection.extend({
     model: Episode
 });
 
+Episodes.existingList = function(input) {
+    var episodes = new Episodes();
+    input.forEach(function(e) {
+        episodes.add(Episode.existingData(e));
+    });
+    return episodes;
+};
+
 var Show = Backbone.Model.extend({
     url: '/show',
 
@@ -143,5 +151,6 @@ module.exports = {
     Links: Links,
     Personality: Personality,
     People: People,
-    Episode: Episode
+    Episode: Episode,
+    Episodes: Episodes
 };

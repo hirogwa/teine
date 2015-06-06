@@ -1,3 +1,5 @@
+var models = require('./models.js');
+
 var linkViewTemplate = require('./link-view.html');
 var LinkView = Backbone.View.extend({
     events: {
@@ -209,8 +211,70 @@ var PersonalityListView = Backbone.View.extend({
     }
 });
 
+var episodeListViewTemplate = require('./templates/episode-list-view.html');
+var EpisodeListView = Backbone.View.extend({
+    el: $('#episode-list'),
+
+    initialize: function() {
+        _.bindAll(this, 'render');
+        this.template = episodeListViewTemplate;
+
+        var self = this;
+        $.ajax({
+            url: '/episodes',
+            success: function(data) {
+                console.log(data);
+                self.collection = models.Episodes.existingList(data);
+                self.render();
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
+    },
+
+    render: function() {
+        console.log(this.collection);
+        this.$el.html(this.template({
+            episodes: this.collection
+        }));
+        this.collection.forEach(function(e) {
+            this.renderAdd(e);
+        }, this);
+        return this;
+    },
+
+    renderAdd: function(e) {
+        this.$('#episode-summaries').append(new EpisodeSummaryView({
+            model: e
+        }).render().el);
+        return this;
+    }
+});
+
+var episodeSummaryViewTemplate =
+    require('./templates/episode-summary-view.html');
+var EpisodeSummaryView = Backbone.View.extend({
+    initialize: function() {
+        _.bindAll(this, 'render');
+        this.template = episodeSummaryViewTemplate;
+    },
+
+    render: function() {
+        console.log(this.model);
+        this.$el.html(this.template({
+            title: this.model.get('title'),
+            summary: this.model.get('summary'),
+            description: this.model.get('description'),
+            guests: this.model.get('people')
+        }));
+        return this;
+    }
+});
+
 module.exports = {
     LinkListView: LinkListView,
     PersonalityView: PersonalityView,
-    PersonalityListView: PersonalityListView
+    PersonalityListView: PersonalityListView,
+    EpisodeListView: EpisodeListView
 };
