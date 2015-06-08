@@ -1,2 +1,35 @@
-<div id="media-summaries">
-</div>
+<table id="media-summaries" class="table table-hover">
+  <thead>
+    <th></th>
+    <th>File</th>
+    <th>Size</th>
+    <th>Type</th>
+    <th>Status</th>
+    <th></th>
+  </thead>
+  <tbody>
+    <% mediaList.forEach(function(m) { %>
+    <tr>
+      <td>
+        <a class="media-link" href="/media/<%= m.get('media_id') %>"
+           target="_blank">
+          <i class="fa fa-play-circle"></i>
+        </a>
+      </td>
+      <td>
+        <%= m.get('name') %></td>
+      <td><%= m.formattedSize() %></td>
+      <td><%= m.get('contentType') %></td>
+      <td><%= m.get('status') %></td>
+      <td>
+        <% if (m.get('status') === 'draft') { %>
+        <a href="#" class="delete-media"
+           data-media-id="<%= m.get('media_id') %>">
+          <i class="fa fa-times"></i> Delete
+        </a>
+        <% } %>
+      </td>
+    </tr>
+    <% }); %>
+  </tbody>
+</table>

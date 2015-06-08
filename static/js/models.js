@@ -1,24 +1,4 @@
 var Media = Backbone.Model.extend({
-    destroy: function() {
-        var self = this;
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                url: '/delete-media',
-                data: {
-                    media_id: self.get('media_id')
-                },
-                dataType: 'json',
-                method: 'POST',
-                success: function(data) {
-                    resolve(data);
-                },
-                error: function(data) {
-                    reject(data);
-                }
-            });
-        });
-    },
-
     upload: function() {
         var self = this;
         return new Promise(function(resolve, reject) {
@@ -39,8 +19,32 @@ var Media = Backbone.Model.extend({
                 }
             });
         });
+    },
+
+    formattedSize: function() {
+        return '{} MB'.replace('{}', (this.get('size') / 1000000).toFixed(2));
     }
 });
+
+Media.destroy = function(media_id) {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: '/delete-media',
+            data: {
+                media_id: media_id
+            },
+            dataType: 'json',
+            method: 'POST',
+            success: function(data) {
+                resolve(data);
+            },
+            error: function(data) {
+                console.log(data);
+                reject(data);
+            }
+        });
+    });
+};
 
 Media.existingData = function(input) {
     return new Media({

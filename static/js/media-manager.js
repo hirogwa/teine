@@ -95,8 +95,8 @@ var MediaManagerView = Backbone.View.extend({
                 data: data
             });
             media.upload().then(function(result) {
+                self.newFile = undefined;
                 self.setUnusedMedia();
-                console.log(result);
             });
         }
     }

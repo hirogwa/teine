@@ -1,2 +1,30 @@
-<div id="episode-summaries">
-</div>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Summary</th>
+      <th>Description</th>
+      <th>People</th>
+      <th>#</th>
+    </tr>
+  </thead>
+  <tbody id="episode-summaries">
+    <% episodes.forEach(function(e) { %>
+    <tr>
+      <td><%= e.get('title') %></td>
+      <td><%= e.get('summary') %></td>
+      <td><%= e.get('description') %></td>
+      <td>
+        <% e.get('people').forEach(function(p) { %>
+        <div><%= p.get('alias') %></div>
+        <% }); %>
+      </td>
+      <td>
+        <a href="/episode/<%= e.get('episode_id') %>" id="episode-summary-edit">
+          <i class="fa fa-pencil-square-o"></i> Edit
+        </a>
+      </td>
+    </tr>
+    <% }); %>
+  </tbody>
+</table>
