@@ -1,0 +1,16 @@
+<div class="media-summary">
+  <a class="media-link" href="/media/<%= media_id %>" target="_blank">
+    <i class="fa fa-play-circle"></i>
+  </a>
+  <span>
+    <%= name %>
+  </span>
+  <%= size %>
+  <%= contentType %>
+  <%= status %>
+  <% if (status === 'draft') { %>
+  <a href="#" class="delete-media">
+    <i class="fa fa-times"></i> Delete
+  </a>
+  <% } %>
+</div>

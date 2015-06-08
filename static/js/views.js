@@ -261,8 +261,8 @@ var EpisodeSummaryView = Backbone.View.extend({
     },
 
     render: function() {
-        console.log(this.model);
         this.$el.html(this.template({
+            episode_id: this.model.get('episode_id'),
             title: this.model.get('title'),
             summary: this.model.get('summary'),
             description: this.model.get('description'),
@@ -272,9 +272,68 @@ var EpisodeSummaryView = Backbone.View.extend({
     }
 });
 
+var mediaSummaryViewTemplate = require('./templates/media-summary-view.html');
+var MediaSummaryView = Backbone.View.extend({
+    events: {
+        'click a.delete-media': 'deleteMedia'
+    },
+
+    initialize: function() {
+        _.bindAll(this, 'render', 'formatSize', 'deleteMedia');
+        this.template = mediaSummaryViewTemplate;
+    },
+
+    render: function() {
+        this.$el.html(this.template({
+            media_id: this.model.get('media_id'),
+            name: this.model.get('name'),
+            size: this.formatSize(),
+            contentType: this.model.get('contentType'),
+            status: this.model.get('status')
+        }));
+        return this;
+    },
+
+    formatSize: function() {
+        return (this.model.get('size') / 1000000).toFixed(2) + 'MB';
+    },
+
+    deleteMedia: function(e) {
+        this.model.destroy().then(function(result) {
+            console.log(result);
+        }, function(reason) {
+            console.log(reason);
+        });
+    }
+});
+
+var mediaListViewTemplate = require('./templates/media-list-view.html');
+var MediaListView = Backbone.View.extend({
+    initialize: function() {
+        _.bindAll(this, 'render', 'renderAdd');
+        this.template = mediaListViewTemplate;
+    },
+
+    render: function() {
+        this.$el.html(this.template({}));
+        this.collection.forEach(function(m) {
+            this.renderAdd(m);
+        }, this);
+        return this;
+    },
+
+    renderAdd: function(m) {
+        this.$('#media-summaries').append(new MediaSummaryView({
+            model: m
+        }).render().el);
+        return this;
+    }
+});
+
 module.exports = {
     LinkListView: LinkListView,
     PersonalityView: PersonalityView,
     PersonalityListView: PersonalityListView,
-    EpisodeListView: EpisodeListView
+    EpisodeListView: EpisodeListView,
+    MediaListView: MediaListView
 };

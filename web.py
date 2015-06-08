@@ -124,7 +124,7 @@ def episode_list():
 def dashboard_template_args(**kwargs):
     user = flask_login.current_user
     result = {
-        'show_id': user.shows[0] if len(user.shows) else 'new'
+        'show_id': user.get_show_id() or 'new'
     }
     for k, v in kwargs.items():
         result[k] = v
@@ -144,12 +144,6 @@ def episode():
         return json_response(ep.export())
 
 
-@app.route('/people', methods=['GET'])
-def page_people():
-    kwargs = dashboard_template_args(sidebar_people='active')
-    return render_template('dashboard-people.html', **kwargs)
-
-
 @app.route('/episodes', methods=['GET'])
 @flask_login.login_required
 def episodes():
@@ -158,24 +152,53 @@ def episodes():
             map(lambda x: x.export(), models.Episode.get_list())))
 
 
-@app.route('/media', methods=['POST', 'GET'])
+@app.route('/upload-media', methods=['POST'])
 @flask_login.login_required
-def media():
-    if 'POST' == request.method:
-        uploaded_file = request.files['file']
+def upload_media():
+    uploaded_file = request.files['file']
+    temp_f = temp_filepath(uploaded_file.filename)
 
-        temp_f = temp_filepath(uploaded_file.filename)
+    user = flask_login.current_user
+    uploaded_file.save(temp_f)
+    media_info = {
+        'content_type': uploaded_file.headers.get('Content-Type'),
+        'size': os.stat(temp_f).st_size
+    }
+    media = models.Media.create_new(
+        user.user_id, uploaded_file.filename, **media_info)
 
-        uploaded_file.save(temp_f)
-        s3_store.set_key_public_read(uploaded_file.filename, temp_f)
+    s3_store.set_key_public_read(media.media_id, temp_f)
+    media.save()
 
-        return json_response({
+    return json_response({
+        'result': 'success',
+        'media': media.export()
+    })
+
+
+@app.route('/delete-media', methods=['POST'])
+@flask_login.login_required
+def delete_media():
+    media_id = request.form['media_id']
+    media = models.Media.get_by_id(media_id)
+    if media:
+        media.delete()
+        result = {
             'result': 'success'
-        })
+        }
+    else:
+        result = {
+            'result': 'error',
+            'reason': 'media not found'
+        }
+    return json_response(result)
 
-    if 'GET' == request.method:
-        kwargs = dashboard_template_args(sidebar_media='active')
-        return render_template('dashboard-media.html', **kwargs)
+
+@app.route('/media', methods=['GET'])
+@flask_login.login_required
+def page_media():
+    kwargs = dashboard_template_args(sidebar_media='active')
+    return render_template('dashboard-media.html', **kwargs)
 
 
 @app.route('/media/<media_id>', methods=['GET'])

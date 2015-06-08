@@ -23,9 +23,9 @@ def batch_write(table_name, collection):
             batch.put_item(data=item)
 
 
-def get_item(table_name, kwargs):
+def get_item(table_name, **kwargs):
     table = Table(table_name, connection=conn)
-    return table.get_item(kwargs)
+    return table.get_item(**kwargs)
 
 
 def query(table_name, **kwargs):
@@ -38,5 +38,6 @@ def scan(table_name, **kwargs):
     return table.scan()
 
 
-def delete(table_name, kwargs):
-    pass
+def delete(table_name, **kwargs):
+    table = Table(table_name, connection=conn)
+    table.delete_item(**kwargs)
