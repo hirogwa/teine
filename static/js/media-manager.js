@@ -7,40 +7,71 @@ var MediaManagerView = Backbone.View.extend({
 
     events: {
         'change input#media-manager-file-input': 'changeInputFile',
-        'click button#upload-media': 'uploadMedia'
+        'click button#upload-media': 'uploadMedia',
+        'click a#show-used-media': 'setUsedMedia',
+        'click a#show-unused-media': 'setUnusedMedia'
     },
 
     initialize: function() {
         _.bindAll(this, 'render',
-                  'changeInputFile', 'uploadMedia');
+                  'changeInputFile', 'uploadMedia',
+                  'setUsedMedia', 'setUnusedMedia');
         this.template = mediaManagerTemplate;
 
         var self = this;
-        $.ajax({
-            url: '/media-list',
-            success: function(data) {
-                self.mediaCollection =
-                    models.MediaCollection.existingCollection(data);
-                self.mediaListView =
-                    new views.MediaListView({
-                        collection: self.mediaCollection
-                    });
-                self.render();
-            },
-            error: function(data) {
-                console.log(data);
-            }
+        models.MediaCollection.loadUnused().then(function(result) {
+            self.mediaListView = new views.MediaListView({
+                collection: result
+            });
+            self.render({
+                tabStatusUnused: 'active'
+            });
+        }, function(reason){
+            console.log('failed to initialize');
         });
     },
 
     render: function(args) {
         var options = args || {};
+        if (!options.tabStatusUsed) {
+            options.tabStatusUnused = 'active';
+        }
         this.$el.html(this.template({
-            inputFileName: options.inputFileName || '',
-            buttonUploadState: options.inputFileName ? '' : 'disabled'
+            inputFileName: this.newFile ? this.newFile.name : '',
+            buttonUploadState: this.newFile ? '' : 'disabled',
+            tabStatusUsed: options.tabStatusUsed,
+            tabStatusUnused: options.tabStatusUnused
         }));
         this.$('#media-list').append(this.mediaListView.render().el);
         return this;
+    },
+
+    setUsedMedia: function(e) {
+        var self = this;
+        return models.MediaCollection.loadUsed().then(function(result) {
+            self.mediaListView = new views.MediaListView({
+                collection: result
+            });
+            self.render({
+                tabStatusUsed: 'active'
+            });
+        }, function(reason){
+            console.log(reason);
+        });
+    },
+
+    setUnusedMedia: function(e) {
+        var self = this;
+        return models.MediaCollection.loadUnused().then(function(result) {
+            self.mediaListView = new views.MediaListView({
+                collection: result
+            });
+            self.render({
+                tabStatusUnused: 'active'
+            });
+        }, function(reason) {
+            console.log(reason);
+        });
     },
 
     changeInputFile: function(e) {
@@ -48,9 +79,7 @@ var MediaManagerView = Backbone.View.extend({
         console.log(this.newFile);
         var file_size_upperbound = 80000000; // 80MB
         if (this.newFile.size < file_size_upperbound) {
-            this.render({
-                inputFileName: this.newFile.name
-            });
+            this.render();
         } else {
             console.log('warn');
         }
@@ -58,6 +87,7 @@ var MediaManagerView = Backbone.View.extend({
     },
 
     uploadMedia: function(e) {
+        var self = this;
         if (this.newFile) {
             var data = new FormData();
             data.append('file', this.newFile);
@@ -65,6 +95,7 @@ var MediaManagerView = Backbone.View.extend({
                 data: data
             });
             media.upload().then(function(result) {
+                self.setUnusedMedia();
                 console.log(result);
             });
         }

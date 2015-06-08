@@ -213,6 +213,13 @@ def retrieve_media(media_id):
 @flask_login.login_required
 def retrieve_media_list():
     media_list = models.Media.get_list(flask_login.current_user)
+    filter_param = request.args.get('filter')
+    if filter_param == 'unused':
+        media_list = filter(
+            lambda x: not x.associated_with_episode(), media_list)
+    if filter_param == 'used':
+        media_list = filter(
+            lambda x: x.associated_with_episode(), media_list)
     return json_response(map(lambda x: x.export(), media_list))
 
 

@@ -64,6 +64,42 @@ MediaCollection.existingCollection = function(input) {
     return c;
 };
 
+MediaCollection.loadUsed = function() {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: '/media-list',
+            method: 'GET',
+            data: {
+                filter: 'used'
+            },
+            success: function(data) {
+                resolve(MediaCollection.existingCollection(data));
+            },
+            error: function(data) {
+                reject(data);
+            }
+        });
+    });
+};
+
+MediaCollection.loadUnused = function() {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: '/media-list',
+            method: 'GET',
+            data: {
+                filter: 'unused'
+            },
+            success: function(data) {
+                resolve(MediaCollection.existingCollection(data));
+            },
+            error: function(data) {
+                reject(data);
+            }
+        });
+    });
+};
+
 var Link = Backbone.Model;
 
 var Links  = Backbone.Collection.extend({
