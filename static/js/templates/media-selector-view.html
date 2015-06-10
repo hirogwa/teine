@@ -1,0 +1,40 @@
+<% if (collection && collection.length > 0) { %>
+<table class="table table-condensed">
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+      <th>File name</th>
+      <th>Size</th>
+      <th>Uploaded on</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% collection.forEach(function(m) { %>
+    <tr class="<%= m.get('selector-selected') ? 'success' : '' %>">
+      <td>
+        <% if (m.get('selector-selected')) { %>
+          <i class="fa fa-check"></i>
+        <% } else { %>
+        <button type="button" data-media-id="<%= m.get('media_id') %>"
+                class="btn btn-xs btn-default media-selector-select">
+          Select
+        </button>
+        <% } %>
+      </td>
+      <td>
+        <a class="media-link" href="/media/<%= m.get('media_id') %>"
+           target="_blank">
+          <i class="fa fa-play-circle"></i>
+        </a>
+      </td>
+      <td><%= m.get('name') %></td>
+      <td><%= m.formattedSize() %></td>
+      <td><%= m.get('uploadedDatetime') %></td>
+    </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } else { %>
+Add media at <a href="/media">media manager</a>
+<% } %>

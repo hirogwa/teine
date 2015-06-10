@@ -29,18 +29,44 @@ var linkListViewTemplate = require('./link-list-view.html');
 var LinkListView = Backbone.View.extend({
     events: {
         'click button#add-link': 'addLink',
-        'change input#new-link-url': 'changeUrl'
+        'input input#new-link-url': 'inputUrl'
     },
 
     initialize: function() {
         _.bindAll(this, 'render', 'renderAdd',
-                  'addLink', 'changeUrl',
+                  'addLink', 'inputUrl', 'checkUrl',
                   'titleElement', 'urlElement');
         this.template = linkListViewTemplate;
 
         this.collection.on('add', this.renderAdd);
         this.collection.on('remove', this.render);
     },
+
+    inputUrl: function(e) {
+        this.checkUrl(e);
+    },
+
+    checkUrl: _.debounce(function(e) {
+        var self = this;
+        var url = e.currentTarget.value;
+        $.ajax({
+            url: '/link-info',
+            method: 'GET',
+            data: {
+                url: url
+            },
+            success: function(data) {
+                if (data.result === 'success') {
+                    self.titleElement().val(data.title);
+                } else {
+                    console.log(data.reason);
+                }
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
+    }, 500),
 
     render: function() {
         this.$el.html(this.template());
@@ -73,28 +99,6 @@ var LinkListView = Backbone.View.extend({
         this.titleElement().val('');
         this.urlElement().val('');
         return this;
-    },
-
-    changeUrl: function(e) {
-        var self = this;
-        var url = e.currentTarget.value;
-        $.ajax({
-            url: '/link-info',
-            method: 'GET',
-            data: {
-                url: url
-            },
-            success: function(data) {
-                if (data.result === 'success') {
-                    self.titleElement().val(data.title);
-                } else {
-                    console.log(data.reason);
-                }
-            },
-            error: function(data) {
-                console.log(data);
-            }
-        });
     }
 });
 
@@ -111,7 +115,7 @@ var PersonalityView = Backbone.View.extend({
 
     render: function() {
         this.$el.html(this.template({
-            id: this.model.get('id'),
+            alias: this.model.get('alias'),
             name: this.model.get('name'),
             description: this.model.get('description'),
             profile_image_url: this.model.get('profile_image_url')
@@ -241,6 +245,82 @@ var EpisodeListView = Backbone.View.extend({
     }
 });
 
+var episodeSaveActionViewTemplate =
+    require('./templates/episode-save-action-view.html');
+var EpisodeSaveActionView = Backbone.View.extend({
+    events: {
+        'change input#episode-save-option-draft': 'selectDraftOption',
+        'change input#episode-save-option-schedule': 'selectScheduleOption',
+        'change input#episode-save-option-publish': 'selectPublishOption',
+        'click button#save-draft': 'saveDraft',
+        'click button#schedule': 'schedule',
+        'click button#publish': 'publish'
+    },
+
+    initialize: function(options) {
+        _.bindAll(this, 'render', 'saveDraft', 'schedule', 'publish',
+                  'selectDraftOption',
+                  'selectScheduleOption',
+                  'selectPublishOption');
+        this.template = episodeSaveActionViewTemplate;
+        if (options && options.delegates) {
+            this.delegates = {
+                saveDraft: options.delegates.saveDraft || function() {},
+                schedule: options.delegates.schedule || function() {},
+                publish: options.delegates.publish || function() {}
+            };
+        }
+        this.render();
+    },
+
+    render: function(args) {
+        var options = args || {};
+        if (!options.scheduleSelected && !options.publishSelected) {
+            options.draftSelected = true;
+        }
+        this.$el.html(this.template({
+            draftSelected: options.draftSelected,
+            scheduleSelected: options.scheduleSelected,
+            publishSelected: options.publishSelected
+        }));
+        return this;
+    },
+
+    selectDraftOption: function(e) {
+        return this.render({
+            draftSelected: true
+        });
+    },
+
+    selectScheduleOption: function(e) {
+        return this.render({
+            scheduleSelected: true
+        });
+    },
+
+    selectPublishOption: function(e) {
+        return this.render({
+            publishSelected: true
+        });
+    },
+
+    saveDraft: function(e) {
+        this.delegates.saveDraft(e);
+        return this;
+    },
+
+    schedule: function(e) {
+        this.delegates.schedule(e);
+        return this;
+    },
+
+    publish: function(e) {
+        console.log('publish');
+        this.delegates.publish(e);
+        return this;
+    }
+});
+
 var mediaListViewTemplate = require('./templates/media-list-view.html');
 var MediaListView = Backbone.View.extend({
     events: {
@@ -264,10 +344,41 @@ var MediaListView = Backbone.View.extend({
     }
 });
 
+var mediaSelectorViewTemplate = require('./templates/media-selector-view.html');
+var MediaSelectorView = Backbone.View.extend({
+    events: {
+        'click button.media-selector-select': 'selectMedia'
+    },
+
+    initialize: function() {
+        _.bindAll(this, 'render', 'selectMedia');
+        this.template = mediaSelectorViewTemplate;
+    },
+
+    render: function() {
+        this.$el.html(this.template({
+            collection: this.collection
+        }));
+        return this;
+    },
+
+    selectMedia: function(e) {
+        var targetId = $(e.currentTarget).data('media-id');
+        this.collection.forEach(function(m) {
+            m.set({
+                'selector-selected': m.get('media_id') === targetId
+            });
+        });
+        return this.render();
+    }
+});
+
 module.exports = {
     LinkListView: LinkListView,
     PersonalityView: PersonalityView,
     PersonalityListView: PersonalityListView,
     EpisodeListView: EpisodeListView,
-    MediaListView: MediaListView
+    EpisodeSaveActionView: EpisodeSaveActionView,
+    MediaListView: MediaListView,
+    MediaSelectorView: MediaSelectorView
 };

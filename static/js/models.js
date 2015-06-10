@@ -135,6 +135,7 @@ var People = Backbone.Collection.extend({
 
     addPersonalityFromTwitter: function(params) {
         params.source = 'twitter';
+        this.addPersonality(params);
     }
 });
 
@@ -183,6 +184,7 @@ Episode.existingData = function(input) {
         title: input.title,
         summary: input.summary,
         description: input.description,
+        media_id: input.media_id,
         people: guests,
         links: links
     });

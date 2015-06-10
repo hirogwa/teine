@@ -1,0 +1,38 @@
+<div class="radio">
+  <label>
+    <input type="radio" name="episode-save"
+           <% if (draftSelected) { %>checked<% }; %>
+           id="episode-save-option-draft">
+    Draft
+  </label>
+</div>
+<div class="radio">
+  <label>
+    <input type="radio" name="episode-save"
+           <% if (scheduleSelected) { %>checked<% }; %>
+           id="episode-save-option-schedule">
+    Schedule
+  </label>
+</div>
+<div class="radio">
+  <label>
+    <input type="radio" name="episode-save"
+           <% if (publishSelected) { %>checked<% }; %>
+           id="episode-save-option-publish">
+    Publish now
+  </label>
+</div>
+<br>
+
+<% if (publishSelected) { %>
+<button class="btn btn-success" id="publish">Publish</button>
+<% }; %>
+
+<% if (draftSelected) { %>
+<button class="btn btn-default" id="save-draft">Save draft</button>
+<% }; %>
+
+<% if (scheduleSelected) { %>
+<input id="schedule-datetime" type="date">
+<button class="btn btn-success" id="schedule">Schedule</button>
+<% }; %>

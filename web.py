@@ -141,7 +141,12 @@ def episode():
 
     if 'GET' == request.method:
         ep = models.Episode.get_by_id(request.args['episode_id'])
-        return json_response(ep.export())
+        result = {
+            'episode': ep.export()
+        }
+        if ep.media_id:
+            result['media'] = models.Media.get_by_id(ep.media_id).export()
+        return json_response(result)
 
 
 @app.route('/episodes', methods=['GET'])
@@ -203,7 +208,7 @@ def page_media():
 
 @app.route('/media/<media_id>', methods=['GET'])
 @flask_login.login_required
-def retrieve_media(media_id):
+def download_media(media_id):
     return redirect(
         urllib.parse.urljoin(
             settings.S3_HOST, '%s/%s' % (settings.S3_BUCKET_NAME, media_id)))
