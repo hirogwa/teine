@@ -35,7 +35,7 @@ var EpisodeEditorView = Backbone.View.extend({
                     success: function(data) {
                         resolve({
                             episode: models.Episode.existingData(data.episode),
-                            media: models.Media.existingData(data.media)
+                            media: data.media ? models.Media.existingData(data.media) : undefined
                         });
                     },
                     error: function(data) {
@@ -59,7 +59,7 @@ var EpisodeEditorView = Backbone.View.extend({
             self.mediaCollection = result[1];
 
             self.peopleView = new views.PersonalityListView({
-                collection: self.episode.get('people')
+                collection: self.episode.get('guests')
             });
             self.linkListView = new views.LinkListView({
                 collection: self.episode.get('links')
@@ -72,10 +72,12 @@ var EpisodeEditorView = Backbone.View.extend({
                 }
             });
 
-            self.media.set({
-                'selector-selected': true
-            });
-            self.mediaCollection.unshift(self.media);
+            if (self.media) {
+                self.media.set({
+                    'selector-selected': true
+                });
+                self.mediaCollection.unshift(self.media);
+            }
             self.mediaSelectorView = new views.MediaSelectorView({
                 collection: self.mediaCollection
             });

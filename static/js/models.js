@@ -144,7 +144,7 @@ var Episode = Backbone.Model.extend({
 
     defaults: {
         links: new Links(),
-        people: new People()
+        guests: new People()
     },
 
     saveType: function(input) {
@@ -185,7 +185,7 @@ Episode.existingData = function(input) {
         summary: input.summary,
         description: input.description,
         media_id: input.media_id,
-        people: guests,
+        guests: guests,
         links: links
     });
 };
