@@ -65,49 +65,49 @@ class Episode():
     table_name = "teine-Episode"
 
     def __init__(self, episode_id, show_id,
-                 title='', summary='', description='',
-                 media_id=None, guests=[], links=[], **kwargs):
+                 title='', summary='', description='', media_id=None,
+                 guest_ids=[], links=[], status=None, **kwargs):
         self.episode_id = episode_id
         self.show_id = show_id
         self.title = title
         self.summary = summary
         self.description = description
         self.media_id = media_id
-        self.guests = guests
+        self.media = None
+        self.guest_ids = guest_ids
+        self.guests = []
         self.links = links
+        self.status = status
 
     @classmethod
     def create_new(cls, show_id, **kwargs):
-        kwargs['links'] = map(lambda x: Link(**x), kwargs.get('links'))
         return Episode(str(uuid.uuid4()), show_id, **kwargs)
 
     @classmethod
     def get_by_id(cls, episode_id):
         rs = dynamo.query(cls.table_name, episode_id__eq=episode_id)
         for val in rs:
-            return cls.from_db(val)
+            kwargs = val
+            kwargs['links'] = map(lambda x: Link(**x), val.get('links') or [])
+            return Episode(**kwargs)
         return None
 
     @classmethod
     def get_list(cls):
         rs = dynamo.scan(cls.table_name)
-        return map(cls.from_db, rs)
 
-    @classmethod
-    def from_db(cls, val):
-        # TODO show
-        return Episode(val.get('episode_id'),
-                       None,
-                       title=val.get('title'),
-                       summary=val.get('summary'),
-                       description=val.get('description'),
-                       media_id=val.get('media_id'),
-                       guests=map(
-                           lambda x: Personality(**x),
-                           val.get('guests') or []),
-                       links=map(
-                           lambda x: Link(**x),
-                           val.get('links') or []))
+        def adjust(val):
+            val['links'] = map(lambda x: Link(**x), val.get('links') or [])
+            return Episode(**val)
+        return [adjust(val) for val in rs]
+
+    def load_guests(self):
+        self.guests = map(lambda x: Personality.get_by_id(x), self.guest_ids)
+        return self
+
+    def load_media(self):
+        self.media = Media.get_by_id(self.media_id) if self.media_id else None
+        return self
 
     def export(self):
         return {
@@ -117,8 +117,11 @@ class Episode():
             'summary': self.summary,
             'description': self.description,
             'media_id': self.media_id,
-            'guests': list(self.guests),
-            'links': list(map(lambda x: x.export(), self.links))
+            'media': self.media.export() if self.media else None,
+            'guest_ids': self.guest_ids,
+            'guests': list(map(lambda x: x.export(), self.guests)),
+            'links': list(map(lambda x: x.export(), self.links)),
+            'status': self.status
         }
 
     def save(self):
@@ -193,15 +196,15 @@ class Media():
 class Personality():
     table_name = 'teine-Personality'
 
-    def __init__(self, personality_id, show_id, twitter=None,
-                 twitter_identity=None):
+    def __init__(self, personality_id, show_id, twitter=None, **kwargs):
         self.personality_id = personality_id
         self.show_id = show_id
         self.twitter = twitter
-        self.twitter_identity = twitter_identity
+        self.twitter_screen_name = (
+            twitter.get('screen_name') if twitter else None)
 
     @classmethod
-    def create_from_twitter(cls, screen_name, show_id, twitter_identity,
+    def create_from_twitter(cls, screen_name, show_id,
                             name='', description='',
                             profile_image_url=None, **kwargs):
         return Personality(str(uuid.uuid4()), show_id, twitter={
@@ -221,47 +224,17 @@ class Personality():
     @classmethod
     def find_by_twitter(cls, screen_name, show_id=None,
                         create_when_not_found=False, **kwargs):
-        identity = TwitterIdentity.find_identity(screen_name)
-        if identity:
-            return cls.get_by_id(identity.personality_id)
-        else:
-            identity = TwitterIdentity.create_new(screen_name)
-            personality = Personality.create_from_twitter(
-                screen_name, show_id, identity, **kwargs)
-            return (personality.save(True)
-                    if create_when_not_found else personality)
-
-    def save(self, save_identity=False):
-        dynamo.update(self.table_name, self.export())
-        if save_identity and self.twitter_identity:
-            self.twitter_identity.save()
-        return self
-
-    def export(self):
-        return {
-            'personality_id': self.personality_id,
-            'show_id': self.show_id,
-            'twitter': self.twitter
+        index = {
+            'index': 'twitter_screen_name-index',
+            'twitter_screen_name__eq': screen_name
         }
-
-
-class TwitterIdentity():
-    table_name = 'teine-PersonalityIdentityTwitter'
-
-    def __init__(self, screen_name, personality_id):
-        self.screen_name = screen_name
-        self.personality_id = personality_id
-
-    @classmethod
-    def create_new(cls, screen_name):
-        return TwitterIdentity(screen_name, str(uuid.uuid4()))
-
-    @classmethod
-    def find_identity(cls, screen_name):
-        rs = dynamo.query(cls.table_name, screen_name__eq=screen_name)
+        rs = dynamo.query(cls.table_name, **index)
         for val in rs:
-            return TwitterIdentity(**val)
-        return None
+            return Personality(**val)
+
+        personality = Personality.create_from_twitter(
+            screen_name, show_id, **kwargs)
+        return personality.save() if create_when_not_found else personality
 
     def save(self):
         dynamo.update(self.table_name, self.export())
@@ -269,8 +242,11 @@ class TwitterIdentity():
 
     def export(self):
         return {
-            'screen_name': self.screen_name,
-            'personality_id': self.personality_id
+            'personality_id': self.personality_id,
+            'show_id': self.show_id,
+            'twitter_screen_name': (
+                self.twitter.get('screen_name') if self.twitter else None),
+            'twitter': self.twitter
         }
 
 

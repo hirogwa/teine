@@ -139,15 +139,19 @@ def episode():
         in_data = request.get_json()
         user = flask_login.current_user
 
-        def create_guests(g):
-            return models.Personality.find_by_twitter(
-                g.get('alias'), user.get_show_id(), True, **g)
+        def get_guests(g):
+            return (models.Personality.get_by_id(g.get('personality_id'))
+                    if g.get('personality_id')
+                    else models.Personality.find_by_twitter(
+                    g.get('alias'), user.get_show_id(), True, **g))
 
-        guests = map(lambda x: create_guests(x), in_data.get('guests'))
-        in_data['guests'] = list(map(lambda x: x.personality_id, guests))
+        in_data['guest_ids'] = list(map(
+            lambda x: get_guests(x).personality_id, in_data.get('guests')))
+        in_data['links'] = map(
+            lambda x: models.Link(**x), in_data.get('links'))
 
         if in_data.get('episode_id'):
-            ep = models.Episode(show=user.get_show_id(), **in_data).save()
+            ep = models.Episode(show_id=user.get_show_id(), **in_data).save()
         else:
             ep = models.Episode.create_new(
                 show_id=user.get_show_id(), **in_data).save()
@@ -158,7 +162,7 @@ def episode():
         })
 
     if 'GET' == request.method:
-        ep = models.Episode.get_by_id(request.args['episode_id'])
+        ep = models.Episode.get_by_id(request.args['episode_id']).load_guests()
         result = {
             'episode': ep.export()
         }
@@ -171,8 +175,9 @@ def episode():
 @flask_login.login_required
 def episodes():
     if 'GET' == request.method:
-        return json_response(list(
-            map(lambda x: x.export(), models.Episode.get_list())))
+        return json_response(list(map(
+            lambda x: x.load_guests().load_media().export(),
+            models.Episode.get_list())))
 
 
 @app.route('/upload-media', methods=['POST'])
