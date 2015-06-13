@@ -121,6 +121,7 @@ def episode_list():
     return render_template('dashboard-episode-list.html', **kwargs)
 
 
+@flask_login.login_required
 def dashboard_template_args(**kwargs):
     user = flask_login.current_user
     result = {
@@ -135,9 +136,26 @@ def dashboard_template_args(**kwargs):
 @flask_login.login_required
 def episode():
     if 'POST' == request.method:
-        # TODO
-        ep = models.Episode.create_new(None, **request.get_json()).save()
-        return json_response(ep.export())
+        in_data = request.get_json()
+        user = flask_login.current_user
+
+        def create_guests(g):
+            return models.Personality.find_by_twitter(
+                g.get('alias'), user.get_show_id(), True, **g)
+
+        guests = map(lambda x: create_guests(x), in_data.get('guests'))
+        in_data['guests'] = list(map(lambda x: x.personality_id, guests))
+
+        if in_data.get('episode_id'):
+            ep = models.Episode(show=user.get_show_id(), **in_data).save()
+        else:
+            ep = models.Episode.create_new(
+                show_id=user.get_show_id(), **in_data).save()
+
+        return json_response({
+            'result': 'success',
+            'episode': ep.export()
+        })
 
     if 'GET' == request.method:
         ep = models.Episode.get_by_id(request.args['episode_id'])
