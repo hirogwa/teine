@@ -150,8 +150,18 @@ def episode():
         in_data['links'] = map(
             lambda x: models.Link(**x), in_data.get('links'))
 
-        if in_data.get('episode_id'):
-            ep = models.Episode(show_id=user.get_show_id(), **in_data).save()
+        ep_id = in_data.get('episode_id')
+        if ep_id:
+            original = models.Episode.get_by_id(ep_id)
+            ep = models.Episode(show_id=user.get_show_id(), **in_data)
+            if original.media_id != ep.media_id and original.media_id:
+                models.Media.get_by_id(
+                    original.media_id).dissociate_episode().save()
+            if ep.media_id:
+                models.Media.get_by_id(ep.media_id).associate_episode(
+                    ep.episode_id, ep.status.get('saved_as'),
+                    ep.status.get('schedule_date')).save()
+            ep.save()
         else:
             ep = models.Episode.create_new(
                 show_id=user.get_show_id(), **in_data).save()

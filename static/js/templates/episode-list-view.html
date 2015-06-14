@@ -3,9 +3,10 @@
     <tr>
       <th>Title</th>
       <th>Summary</th>
-      <th>Description</th>
-      <th>People</th>
-      <th>#</th>
+      <th>Audio</th>
+      <th>Guests</th>
+      <th>Status</th>
+      <th></th>
     </tr>
   </thead>
   <tbody id="episode-summaries">
@@ -13,11 +14,32 @@
     <tr>
       <td><%= e.get('title') %></td>
       <td><%= e.get('summary') %></td>
-      <td><%= e.get('description') %></td>
       <td>
-        <% e.get('people').forEach(function(p) { %>
-        <div><%= p.get('alias') %></div>
+        <% if (e.get('media')) { %>
+        <% m = e.get('media'); %>
+        <a href="/media/<%= m.get('media_id') %>" target="_blank">
+          <%= '{0} ({1})'.replace('{0}', m.get('name'))
+              .replace('{1}', m.formattedSize()) %>
+          <% }; %>
+        </a>
+      </td>
+      <td>
+        <% e.get('guests').forEach(function(p) { %>
+        <div>
+          <img src="<%= p.get('profile_image_url') %>" height="30" width="30" />
+          <%= p.get('alias') %>
+        </div>
         <% }); %>
+      </td>
+      <td>
+        <% s = e.get('status') %>
+        <% if (s.saved_as === 'scheduled') { %>
+        Scheduled on <%= s.schedule_date %>
+        <% } else if (s.saved_as === 'published') { %>
+        Published on <%= s.publish_date %>
+        <% } else if (s.saved_as === 'draft') { %>
+        Draft
+        <% } %>
       </td>
       <td>
         <a href="/episode/<%= e.get('episode_id') %>" id="episode-summary-edit">

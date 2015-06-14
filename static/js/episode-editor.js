@@ -8,7 +8,7 @@ var EpisodeEditorView = Backbone.View.extend({
     events: {
         'change input#episode-title': 'changeTitle',
         'change input#episode-summary': 'changeSummary',
-        'change input#episode-description': 'changeDescription',
+        'change textarea#episode-description': 'changeDescription',
         'change input#schedule-datetime': 'changeScheduleDatetime',
 
         'click button#add-personality': 'addPersonality',
@@ -19,7 +19,7 @@ var EpisodeEditorView = Backbone.View.extend({
         _.bindAll(this, 'render',
                   'changeTitle', 'changeSummary', 'changeDescription',
                   'changeScheduleDatetime',
-                  'addPersonality',
+                  'addPersonality', 'setSelectedMedia',
                   'publish', 'saveDraft', 'schedule');
         this.template = episodeEditorTemplate;
 
@@ -43,8 +43,9 @@ var EpisodeEditorView = Backbone.View.extend({
                     }
                 });
             } else {
-                self.episode = new models.Episode();
-                resolve();
+                resolve({
+                    episode: new models.Episode()
+                });
             }
         });
 
@@ -53,10 +54,10 @@ var EpisodeEditorView = Backbone.View.extend({
         Promise.all([
             loadingEpisode,
             loadingMediaCollection
-        ]).then(function(result) {
-            self.episode = result[0].episode;
-            self.media = result[0].media;
-            self.mediaCollection = result[1];
+        ]).then(function(results) {
+            self.episode = results[0].episode;
+            self.media = results[0].media;
+            self.mediaCollection = results[1];
 
             self.peopleView = new views.PersonalityListView({
                 collection: self.episode.get('guests')
@@ -69,7 +70,8 @@ var EpisodeEditorView = Backbone.View.extend({
                     saveDraft: self.saveDraft,
                     schedule: self.schedule,
                     publish: self.publish
-                }
+                },
+                status: self.episode.get('status')
             });
 
             if (self.media) {
@@ -130,21 +132,33 @@ var EpisodeEditorView = Backbone.View.extend({
     },
 
     addPersonality: function(e) {
-        this.episode.get('people').add(new models.Personality({
+        this.episode.get('guests').add(new models.Personality({
             twitter: $('#new-personality-twitter').val()
         }));
     },
 
     publish: function(e) {
+        this.setSelectedMedia();
         this.episode.publish();
     },
 
     saveDraft: function(e) {
+        this.setSelectedMedia();
         this.episode.saveDraft();
     },
 
-    schedule: function(e) {
-        this.episode.schedule();
+    schedule: function(e, args) {
+        var options = args || {};
+        this.setSelectedMedia();
+        this.episode.schedule(options.scheduled_date);
+    },
+
+    setSelectedMedia: function() {
+        var media = this.mediaCollection.selectedMedia();
+        this.episode.set({
+            media_id: media ? media.get('media_id') : undefined
+        });
+        return this;
     }
 });
 

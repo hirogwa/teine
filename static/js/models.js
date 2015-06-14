@@ -57,7 +57,13 @@ Media.existingData = function(input) {
 };
 
 var MediaCollection = Backbone.Collection.extend({
-    model: Media
+    model: Media,
+
+    selectedMedia: function() {
+        return this.find(function(m) {
+            return m.get('selector-selected');
+        });
+    }
 });
 
 MediaCollection.existingCollection = function(input) {
@@ -125,7 +131,7 @@ var People = Backbone.Collection.extend({
     addPersonality: function(params) {
         this.add(new Personality({
             source: params.source,
-            alias: params.screen_name || params.alias,
+            alias: params.alias,
             name: params.name,
             description: params.description,
             profile_image_url: params.profile_image_url
@@ -135,6 +141,7 @@ var People = Backbone.Collection.extend({
 
     addPersonalityFromTwitter: function(params) {
         params.source = 'twitter';
+        params.alias = params.screen_name;
         this.addPersonality(params);
     }
 });
@@ -149,30 +156,39 @@ var Episode = Backbone.Model.extend({
 
     saveType: function(input) {
         this.set({
-            savedAs: input
+            status: input
         });
     },
 
     publish: function() {
-        this.saveType('published');
+        this.saveType({
+            saved_as: 'published'
+        });
         this.save();
     },
 
     saveDraft: function() {
-        this.saveType('draft');
+        this.saveType({
+            saved_as: 'draft'
+        });
         this.save();
     },
 
-    schedule: function() {
-        this.saveType('scheduled');
+    schedule: function(scheduled_date) {
+        this.saveType({
+            saved_as: 'scheduled',
+            schedule_date: scheduled_date
+        });
         this.save();
     }
 });
 
 Episode.existingData = function(input) {
     var guests = new People();
-    input.guests.forEach(function(p) {
-        guests.addPersonality(p);
+    input.guests.forEach(function(g) {
+        if (g.twitter) {
+            guests.addPersonalityFromTwitter(g.twitter);
+        }
     });
     var links = new Links();
     input.links.forEach(function(l) {
@@ -185,8 +201,10 @@ Episode.existingData = function(input) {
         summary: input.summary,
         description: input.description,
         media_id: input.media_id,
+        media: input.media ? Media.existingData(input.media) : undefined,
         guests: guests,
-        links: links
+        links: links,
+        status: input.status
     });
 };
 

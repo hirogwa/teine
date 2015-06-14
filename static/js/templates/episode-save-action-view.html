@@ -33,6 +33,7 @@
 <% }; %>
 
 <% if (scheduleSelected) { %>
-<input id="schedule-datetime" type="date">
+<input id="scheduled-date" type="date"
+       <% if (scheduleDate) { %>value="<%= scheduleDate %>"<% } %>>
 <button class="btn btn-success" id="schedule">Schedule</button>
 <% }; %>

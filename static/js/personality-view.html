@@ -1,11 +1,12 @@
 <div class="col-xs-6 col-md-3">
   <div class="thumbnail">
-    <img src="<%= profile_image_url %>" alt="profile image"/>
+    <a href="https://twitter.com/<%= alias %>" target="_blank">
+      <img src="<%= profile_image_url %>" alt="profile image"/>
+    </a>
     <div class="caption">
       <h4><%= name %></h4>
-        <a href="https://twitter.com/<%= alias %>"
-           target="_blank">@<%= alias %></a>
       <p>
+        @<%= alias %>
       </p>
       <p>
         <button type="button" class="btn btn-sm btn-default remove-personality">

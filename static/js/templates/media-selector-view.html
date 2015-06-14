@@ -7,6 +7,7 @@
       <th>File name</th>
       <th>Size</th>
       <th>Uploaded on</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -14,7 +15,9 @@
     <tr class="<%= m.get('selector-selected') ? 'success' : '' %>">
       <td>
         <% if (m.get('selector-selected')) { %>
-          <i class="fa fa-check"></i>
+        <button type="button" class="btn btn-xs btn-default media-selector-deselect">
+          Deselect
+        </button>
         <% } else { %>
         <button type="button" data-media-id="<%= m.get('media_id') %>"
                 class="btn btn-xs btn-default media-selector-select">
@@ -31,6 +34,11 @@
       <td><%= m.get('name') %></td>
       <td><%= m.formattedSize() %></td>
       <td><%= m.get('uploadedDatetime') %></td>
+      <td>
+        <% if (m.get('selector-selected')) { %>
+        <i class="fa fa-check"></i>
+        <% } %>
+      </td>
     </tr>
     <% }); %>
   </tbody>

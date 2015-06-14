@@ -144,14 +144,16 @@ class Link():
 class Media():
     table_name = 'teine-Media'
 
-    def __init__(self, media_id, owner_user, name='',
-                 content_type=None, size=0, status=None):
+    def __init__(self, media_id, owner_user, name='', content_type=None,
+                 size=0, episode_id=None, status=None, schedule_date=None):
         self.media_id = media_id
         self.owner_user = owner_user
         self.name = name
         self.content_type = content_type
         self.size = size
+        self.episode_id = episode_id
         self.status = status
+        self.schedule_date = schedule_date
 
     @classmethod
     def create_new(cls, owner_user_id, filename, **kwargs):
@@ -171,17 +173,29 @@ class Media():
         rs = dynamo.scan(cls.table_name)
         return map(lambda x: Media(**x), rs)
 
+    def associate_episode(self, episode_id, status, schedule_date=None):
+        self.episode_id = episode_id
+        self.status = status
+        self.schedule_date = schedule_date
+        return self
+
+    def dissociate_episode(self):
+        self.episode_id = None
+        return self
+
     def associated_with_episode(self):
-        return self.status != 'draft'
+        return self.episode_id is not None
 
     def export(self):
         return {
             'media_id': self.media_id,
             'owner_user': self.owner_user,
+            'episode_id': self.episode_id,
             'name': self.name,
             'content_type': self.content_type,
             'size': str(self.size),
-            'status': self.status
+            'status': self.status,
+            'schedule_date': self.schedule_date
         }
 
     def save(self):
