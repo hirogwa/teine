@@ -130,7 +130,6 @@ var People = Backbone.Collection.extend({
 
     addPersonality: function(params) {
         this.add(new Personality({
-            source: params.source,
             alias: params.alias,
             name: params.name,
             description: params.description,
@@ -140,7 +139,6 @@ var People = Backbone.Collection.extend({
     },
 
     addPersonalityFromTwitter: function(params) {
-        params.source = 'twitter';
         params.alias = params.screen_name;
         this.addPersonality(params);
     }
@@ -232,11 +230,7 @@ Show.existingData = function(input) {
     var s = new Show();
     var show_hosts = new People();
     input.show_hosts.forEach(function(p) {
-        show_hosts.addPersonality(p);
-    });
-    var episodes = new Episodes();
-    input.episodes.forEach(function(e) {
-        episodes.add(Episode.existingData(e));
+        show_hosts.addPersonalityFromTwitter(p.twitter);
     });
 
     s.set({
@@ -244,8 +238,7 @@ Show.existingData = function(input) {
         title: input.title,
         tagline: input.tagline,
         description: input.description,
-        show_hosts: show_hosts,
-        episodes: episodes
+        show_hosts: show_hosts
     });
     return s;
 };

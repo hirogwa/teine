@@ -85,14 +85,27 @@ def show():
     if 'GET' == request.method:
         show_id = request.args['show_id']
         user = flask_login.current_user
-        show = models.Show.get_by_id(show_id, user)
+        show = models.Show.get_by_id(show_id, user).load_hosts()
         return json_response(show.export())
 
     if 'POST' == request.method:
         user = flask_login.current_user
-        show = models.Show.create_new(user, **request.get_json())
+        in_data = request.get_json()
+
+        in_data['show_host_ids'] = list(map(
+            lambda x: get_personality(x).personality_id,
+            in_data.get('show_hosts')))
+
+        if in_data['show_id']:
+            show = models.Show(owner_user_id=user.user_id, **in_data)
+        else:
+            show = models.Show.create_new(
+                owner_user_id=user.user_id, **in_data)
         show.save()
-        return json_response(show.export())
+        return json_response({
+            'result': 'success',
+            'show': show.export()
+        })
 
 
 @app.route('/episode/new', methods=['GET'])
@@ -138,6 +151,12 @@ def dashboard_template_args(**kwargs):
     return result
 
 
+def get_personality(g):
+    user = flask_login.current_user
+    return models.Personality.find_by_twitter(
+        g.get('alias'), user.get_show_id(), True, **g)
+
+
 @app.route('/episode', methods=['GET', 'POST'])
 @flask_login.login_required
 def episode():
@@ -145,14 +164,9 @@ def episode():
         in_data = request.get_json()
         user = flask_login.current_user
 
-        def get_guests(g):
-            return (models.Personality.get_by_id(g.get('personality_id'))
-                    if g.get('personality_id')
-                    else models.Personality.find_by_twitter(
-                    g.get('alias'), user.get_show_id(), True, **g))
-
         in_data['guest_ids'] = list(map(
-            lambda x: get_guests(x).personality_id, in_data.get('guests')))
+            lambda x: get_personality(x).personality_id,
+            in_data.get('guests')))
         in_data['links'] = map(
             lambda x: models.Link(**x), in_data.get('links'))
 

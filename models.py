@@ -7,53 +7,44 @@ import settings
 class Show():
     table_name = "teine-Show"
 
-    def __init__(self, show_id, user, title='', tagline='',
-                 description='', show_hosts=[], episodes=[]):
+    def __init__(self, show_id, owner_user_id, title='', tagline='',
+                 description='', show_host_ids=[], **kwargs):
         self.show_id = show_id
-        self.owner_user = user
+        self.owner_user_id = owner_user_id
         self.title = title
         self.tagline = tagline
         self.description = description
-        self.show_hosts = show_hosts
-        self.episodes = episodes
+        self.show_host_ids = show_host_ids
+        self.show_hosts = None
 
     @classmethod
-    def create_new(cls, user, **kwargs):
-        return Show(str(uuid.uuid4()), user,
-                    title=kwargs.get('title'),
-                    tagline=kwargs.get('tagline'),
-                    description=kwargs.get('description'),
-                    show_hosts=map(
-                        lambda x: Personality.create_new(**x),
-                        kwargs.get('show_hosts')))
+    def create_new(cls, user_id, **kwargs):
+        return Show(str(uuid.uuid4()), user_id, **kwargs)
 
     @classmethod
     def get_by_id(cls, show_id, user):
         rs = dynamo.query(cls.table_name, show_id__eq=show_id)
         for val in rs:
-            return Show(show_id, user,
-                        title=val.get('title'),
-                        tagline=val.get('tagline'),
-                        description=val.get('description'),
-                        show_hosts=map(
-                            lambda x: Personality(**x),
-                            val.get('show_hosts') or []),
-                        episodes=map(
-                            lambda ep_id: Episode(ep_id),
-                            val.get('episodes') or []))
+            return Show(**val)
 
         return None
+
+    def load_hosts(self):
+        if not self.show_hosts:
+            self.show_hosts = map(
+                lambda x: Personality.get_by_id(x), self.show_host_ids)
+        return self
 
     def export(self):
         return {
             'show_id': self.show_id,
-            'owner_user': self.owner_user.user_id,
+            'owner_user_id': self.owner_user_id,
             'title': self.title,
             'tagline': self.tagline,
             'description': self.description,
-            'show_hosts': list(
-                map(lambda x: x.export(), self.show_hosts)),
-            'episodes': list(map(lambda x: x.episode_id, self.episodes))
+            'show_host_ids': self.show_host_ids,
+            'show_hosts': list(map(
+                lambda x: x.export(), self.show_hosts or []))
         }
 
     def save(self):
