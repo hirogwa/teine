@@ -6,7 +6,6 @@
       <th></th>
       <th>File name</th>
       <th>Size</th>
-      <th>Uploaded on</th>
       <th></th>
     </tr>
   </thead>
@@ -33,7 +32,6 @@
       </td>
       <td><%= m.get('name') %></td>
       <td><%= m.formattedSize() %></td>
-      <td><%= m.get('uploadedDatetime') %></td>
       <td>
         <% if (m.get('selector-selected')) { %>
         <i class="fa fa-check"></i>

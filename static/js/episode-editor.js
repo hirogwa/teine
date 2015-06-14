@@ -33,9 +33,18 @@ var EpisodeEditorView = Backbone.View.extend({
                     },
                     dataType: 'json',
                     success: function(data) {
+                        var episode = models.Episode.existingData(data.episode);
+                        var media = data.media && !options.copy_mode ?
+                            models.Media.existingData(data.media) : undefined;
+                        if (options.copy_mode) {
+                            episode.set({
+                                episode_id: undefined
+                            });
+                        }
+
                         resolve({
-                            episode: models.Episode.existingData(data.episode),
-                            media: data.media ? models.Media.existingData(data.media) : undefined
+                            episode: episode,
+                            media: media
                         });
                     },
                     error: function(data) {

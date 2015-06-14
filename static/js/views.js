@@ -313,7 +313,7 @@ var EpisodeSaveActionView = Backbone.View.extend({
     },
 
     selectPublishOption: function(e) {
-        this.savedAs = 'publish';
+        this.savedAs = 'published';
         return this.render();
     },
 

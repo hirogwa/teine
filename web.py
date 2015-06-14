@@ -101,16 +101,22 @@ def page_create_episode():
     return page_episode()
 
 
+@app.route('/episode/copy/<episode_id>', methods=['GET'])
+def page_copy_episode(episode_id):
+    return page_episode(episode_id, True)
+
+
 @app.route('/episode/<episode_id>', methods=['GET'])
 @flask_login.login_required
 def page_load_episode(episode_id):
     return page_episode(episode_id)
 
 
-def page_episode(episode_id=None):
+def page_episode(episode_id=None, copy_mode=False):
     kwargs = dashboard_template_args(sidebar_episodes='active')
     if episode_id:
         kwargs['episode_id'] = episode_id
+        kwargs['copy_mode'] = copy_mode
     return render_template('dashboard-episode.html', **kwargs)
 
 

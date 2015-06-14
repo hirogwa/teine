@@ -10,7 +10,8 @@
     $(function() {
         {% if episode_id %}
         new teine.EpisodeEditorView({
-            episode_id: "{{ episode_id }}"
+            episode_id: "{{ episode_id }}",
+            copy_mode: "{{ copy_mode }}"
         });
         {% else %}
         new teine.EpisodeEditorView();
