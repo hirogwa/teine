@@ -1,7 +1,12 @@
-var models = require('./models.js');
-var views = require('./views.js');
+var models = {
+    Media: require('../../models/media.js').Media,
+    MediaCollection: require('../../models/media.js').MediaCollection
+};
+var views = {
+    MediaListView: require('../media/media-list-view.js').MediaListView
+};
 
-var mediaManagerTemplate = require('./templates/media-manager.html');
+var mediaManagerTemplate = require('./media-manager.html');
 var MediaManagerView = Backbone.View.extend({
     el: $('#media-manager'),
 

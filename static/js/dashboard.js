@@ -1,7 +1,11 @@
 teine = {};
 $(function() {
-    teine.EpisodeEditorView = require('./episode-editor.js').EpisodeEditorView;
-    teine.ShowEditorView = require('./show-editor.js').ShowEditorView;
-    teine.EpisodeListView = require('./views.js').EpisodeListView;
-    teine.MediaManagerView = require('./media-manager.js').MediaManagerView;
+    teine.ShowEditorView =
+        require('./views/show/show-editor.js').ShowEditorView;
+    teine.EpisodeEditorView =
+        require('./views/episode/episode-editor.js').EpisodeEditorView;
+    teine.EpisodeListView =
+        require('./views/episode/episode-list-view.js').EpisodeListView;
+    teine.MediaManagerView =
+        require('./views/media/media-manager.js').MediaManagerView;
 });

@@ -1,7 +1,11 @@
-var views = require('./views.js');
-var models = require('./models.js');
+var views = {
+    PersonalityListView: require('../personality/personality-list-view.js').PersonalityListView
+};
+var models = {
+    Show: require('../../models/show.js').Show
+};
 
-var showEditorTemplate = require('./templates/show-editor.html');
+var showEditorTemplate = require('./show-editor.html');
 var ShowEditorView = Backbone.View.extend({
     el: $('#show-editor'),
 

@@ -1,6 +1,17 @@
-var models = require('./models.js');
-var views = require('./views.js');
-var episodeEditorTemplate = require('./templates/episode-editor.html');
+var models = {
+    Episode: require('../../models/episode.js').Episode,
+    Media: require('../../models/media.js').Media,
+    MediaCollection: require('../../models/media.js').MediaCollection,
+    Personality: require('../../models/personality.js').Personality
+};
+
+var views = {
+    PersonalityListView: require('../personality/personality-list-view.js').PersonalityListView,
+    LinkListView: require('../link/link-list-view.js').LinkListView,
+    EpisodeSaveActionView: require('../episode/episode-save-action-view.js').EpisodeSaveActionView,
+    MediaSelectorView: require('../media/media-selector-view.js').MediaSelectorView
+};
+var episodeEditorTemplate = require('./episode-editor.html');
 
 var EpisodeEditorView = Backbone.View.extend({
     el: $('#episode-editor'),
