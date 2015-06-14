@@ -56,8 +56,8 @@ def logout():
 @app.route('/dashboard', methods=['GET'])
 @flask_login.login_required
 def dashboard():
-    kwargs = dashboard_template_args(sidebar_overview='active')
-    return render_template('dashboard-overview.html', **kwargs)
+    kwargs = dashboard_template_args(sidebar_show='active')
+    return render_template('dashboard-show.html', **kwargs)
 
 
 @app.route('/show/new', methods=['GET'])
