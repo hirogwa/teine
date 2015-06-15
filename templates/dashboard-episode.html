@@ -2,6 +2,7 @@
 
 {% block dashboard_content %}
 <h2>Episode</h2>
+{% include 'alert.html' %}
 <hr>
 <div id="episode-editor">
 </div>
@@ -11,7 +12,7 @@
         {% if episode_id %}
         new teine.EpisodeEditorView({
             episode_id: "{{ episode_id }}",
-            copy_mode: "{{ copy_mode }}"
+            copy_mode: {{ copy_mode }}
         });
         {% else %}
         new teine.EpisodeEditorView();

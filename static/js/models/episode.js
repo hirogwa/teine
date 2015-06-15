@@ -16,18 +16,33 @@ var Episode = Backbone.Model.extend({
         });
     },
 
+    saveAndRedirect: function() {
+        this.save(null, {
+            success: function(model, response) {
+                if (response.result === 'success') {
+                    window.location.replace('?updated=success');
+                } else {
+                    window.location.replace('?updated=error');
+                }
+            },
+            error: function(model, xhr) {
+                window.location.replace('?updated=error');
+            }
+        });
+    },
+
     publish: function() {
         this.saveType({
             saved_as: 'published'
         });
-        this.save();
+        this.saveAndRedirect();
     },
 
     saveDraft: function() {
         this.saveType({
             saved_as: 'draft'
         });
-        this.save();
+        this.saveAndRedirect();
     },
 
     schedule: function(scheduled_date) {
@@ -35,7 +50,7 @@ var Episode = Backbone.Model.extend({
             saved_as: 'scheduled',
             schedule_date: scheduled_date
         });
-        this.save();
+        this.saveAndRedirect();
     }
 });
 

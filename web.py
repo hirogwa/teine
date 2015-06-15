@@ -92,7 +92,7 @@ def show():
 
     if 'POST' == request.method:
         user = flask_login.current_user
-        in_data = sanitized_input(request.get_json())
+        in_data = request.get_json()
 
         in_data['show_host_ids'] = list(map(
             lambda x: get_personality(x).personality_id,
@@ -110,18 +110,6 @@ def show():
         })
 
 
-def sanitized_input(d):
-    if isinstance(d, dict):
-        result = dict()
-        for k, v in d.items():
-            result[k] = sanitized_input(v)
-        return result
-    if isinstance(d, list):
-        return [sanitized_input(x) for x in d]
-    if isinstance(d, str):
-        return html.escape(d)
-
-
 @app.route('/episode/new', methods=['GET'])
 @flask_login.login_required
 def page_create_episode():
@@ -136,14 +124,16 @@ def page_copy_episode(episode_id):
 @app.route('/episode/<episode_id>', methods=['GET'])
 @flask_login.login_required
 def page_load_episode(episode_id):
-    return page_episode(episode_id)
+    return page_episode(episode_id,
+                        updated={'result': request.args.get('updated')})
 
 
-def page_episode(episode_id=None, copy_mode=False):
+def page_episode(episode_id=None, copy_mode=False, updated=None):
     kwargs = dashboard_template_args(sidebar_episodes='active')
     if episode_id:
         kwargs['episode_id'] = episode_id
-        kwargs['copy_mode'] = copy_mode
+        kwargs['copy_mode'] = 'true' if copy_mode else 'false'
+        kwargs['updated'] = updated
     return render_template('dashboard-episode.html', **kwargs)
 
 
@@ -379,9 +369,22 @@ def temp_filepath(filename):
     return os.path.join(settings.TEMP_FILES_DIR, filename)
 
 
+def sanitized_output(d):
+    if isinstance(d, dict):
+        result = dict()
+        for k, v in d.items():
+            result[k] = sanitized_output(v)
+        return result
+    if isinstance(d, list):
+        return [sanitized_output(x) for x in d]
+    if isinstance(d, str):
+        return html.escape(d)
+
+
 def json_response(data):
     if type(data) is map:
         data = list(data)
+    data = sanitized_output(data)
     return Response(json.dumps(data), mimetype='application/json')
 
 

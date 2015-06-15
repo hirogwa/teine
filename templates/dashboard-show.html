@@ -2,16 +2,7 @@
 
 {% block dashboard_content %}
 <h2>Show</h2>
-{% if updated and updated.get('result') == 'success' %}
-<div class="alert alert-success">
-  Change saved!
-</div>
-{% endif %}
-{% if updated and updated.get('result') == 'error' %}
-<div class="alert alert-danger">
-  Something went wrong. Please try again.
-</div>
-{% endif %}
+{% include 'alert.html' %}
 <hr>
 
 <div id="show-editor">

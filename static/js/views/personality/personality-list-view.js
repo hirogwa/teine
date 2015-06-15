@@ -45,6 +45,9 @@ var PersonalityListView = Backbone.View.extend({
                     };
                 },
                 processResults: function(data, page) {
+                    data.forEach(function(d, i) {
+                        d.id = i + 1;
+                    });
                     return {
                         results: data
                     };
