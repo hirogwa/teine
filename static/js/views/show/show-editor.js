@@ -28,7 +28,6 @@ var ShowEditorView = Backbone.View.extend({
                     },
                     dataType: 'json',
                     success: function(data) {
-                        console.log(data);
                         self.show = models.Show.existingData(data);
                         resolve(data);
                     },
@@ -51,7 +50,6 @@ var ShowEditorView = Backbone.View.extend({
     },
 
     render: function() {
-        console.log('rendering show editor');
         this.$el.html(this.template({
             showTitle: this.show.get('title'),
             showTagline: this.show.get('tagline'),
@@ -70,7 +68,18 @@ var ShowEditorView = Backbone.View.extend({
             tagline: $('#show-tagline').val(),
             description: $('#show-description').val()
         });
-        this.show.save();
+        this.show.save(null, {
+            success: function(model, response) {
+                if (response.result === 'success') {
+                    window.location.replace('?updated=success');
+                } else {
+                    window.location.replace('?updated=error');
+                }
+            },
+            error: function(model, xhr) {
+                window.location.replace('?updated=error');
+            }
+        });
     }
 });
 

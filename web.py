@@ -1,5 +1,6 @@
 from flask import Flask, Response, render_template, request, redirect, url_for
 from bs4 import BeautifulSoup
+import html
 import flask_login
 import json
 import os
@@ -69,13 +70,14 @@ def page_create_show():
 @app.route('/show/<show_id>', methods=['GET'])
 @flask_login.login_required
 def page_load_show(show_id):
-    return page_show(show_id)
+    return page_show(show_id, {'result': request.args.get('updated')})
 
 
-def page_show(show_id=None):
+def page_show(show_id=None, updated=None):
     kwargs = dashboard_template_args(sidebar_show='active')
     if show_id:
         kwargs['show_id'] = show_id
+        kwargs['updated'] = updated
     return render_template('dashboard-show.html', **kwargs)
 
 
@@ -90,7 +92,7 @@ def show():
 
     if 'POST' == request.method:
         user = flask_login.current_user
-        in_data = request.get_json()
+        in_data = sanitized_input(request.get_json())
 
         in_data['show_host_ids'] = list(map(
             lambda x: get_personality(x).personality_id,
@@ -106,6 +108,18 @@ def show():
             'result': 'success',
             'show': show.export()
         })
+
+
+def sanitized_input(d):
+    if isinstance(d, dict):
+        result = dict()
+        for k, v in d.items():
+            result[k] = sanitized_input(v)
+        return result
+    if isinstance(d, list):
+        return [sanitized_input(x) for x in d]
+    if isinstance(d, str):
+        return html.escape(d)
 
 
 @app.route('/episode/new', methods=['GET'])
