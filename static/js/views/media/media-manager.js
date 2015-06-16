@@ -6,6 +6,7 @@ var views = {
     MediaListView: require('../media/media-list-view.js').MediaListView
 };
 
+require('bootstrapNotify');
 var mediaManagerTemplate = require('./media-manager.html');
 var MediaManagerView = Backbone.View.extend({
     el: $('#media-manager'),
@@ -19,15 +20,13 @@ var MediaManagerView = Backbone.View.extend({
 
     initialize: function() {
         _.bindAll(this, 'render',
-                  'changeInputFile', 'uploadMedia',
-                  'setUsedMedia', 'setUnusedMedia');
+                  'changeInputFile', 'uploadMedia', 'deleteMedia',
+                  'resetMediaListView', 'setUsedMedia', 'setUnusedMedia');
         this.template = mediaManagerTemplate;
 
         var self = this;
         models.MediaCollection.loadUnused().then(function(result) {
-            self.mediaListView = new views.MediaListView({
-                collection: result
-            });
+            self.resetMediaListView(result);
             self.render({
                 tabStatusUnused: 'active'
             });
@@ -51,12 +50,69 @@ var MediaManagerView = Backbone.View.extend({
         return this;
     },
 
+    resetMediaListView: function(collection) {
+        this.mediaListView = new views.MediaListView({
+            collection: collection,
+            delegates: {
+                deleteMedia: this.deleteMedia
+            }
+        });
+        return this;
+    },
+
+    deleteMedia: function(mediaName, mediaId) {
+        var self = this;
+        bootbox.dialog({
+            message: 'Are you sure you want to delete {}?'
+                .replace('{}', mediaName),
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default'
+                },
+                danger: {
+                    label: 'Delete',
+                    className: 'btn-danger',
+                    callback: function() {
+                        var notifyDeleting = $.notify({
+                            message: 'Deleting {}...'.replace('{}', mediaName)
+                        }, {
+                            type: 'info',
+                            delay: 0,
+                            placement: {
+                                align: 'center'
+                            }
+                        });
+
+                        models.Media.destroy(mediaId).then(function(result) {
+                            if (result.result === 'success') {
+                                notifyDeleting.close();
+                                $.notify({
+                                    message: '{} deleted!'
+                                        .replace('{}', mediaName)
+                                }, {
+                                    type: 'info',
+                                    newest_on_top: true,
+                                    placement: {
+                                        align: 'center'
+                                    }
+                                });
+                                self.setUnusedMedia();
+                            }
+                        }, function(reason) {
+                            console.log('failed to delete media');
+                            console.log(reason);
+                        });
+                    }
+                }
+            }
+        });
+    },
+
     setUsedMedia: function(e) {
         var self = this;
         return models.MediaCollection.loadUsed().then(function(result) {
-            self.mediaListView = new views.MediaListView({
-                collection: result
-            });
+            self.resetMediaListView(result);
             self.render({
                 tabStatusUsed: 'active'
             });
@@ -68,9 +124,7 @@ var MediaManagerView = Backbone.View.extend({
     setUnusedMedia: function(e) {
         var self = this;
         return models.MediaCollection.loadUnused().then(function(result) {
-            self.mediaListView = new views.MediaListView({
-                collection: result
-            });
+            self.resetMediaListView(result);
             self.render({
                 tabStatusUnused: 'active'
             });
@@ -99,9 +153,32 @@ var MediaManagerView = Backbone.View.extend({
             var media = new models.Media({
                 data: data
             });
+
+            var notifyUploading = $.notify({
+                message: 'Uploading {}...'.replace('{}', this.newFile.name)
+            }, {
+                delay: 0,
+                placement: {
+                    align: 'center'
+                }
+            });
             media.upload().then(function(result) {
-                self.newFile = undefined;
-                self.setUnusedMedia();
+                if (result.result === 'success') {
+                    notifyUploading.close();
+                    $.notify({
+                        message: '{} uploaded!'.replace('{}', self.newFile.name)
+                    }, {
+                        newest_on_top: true,
+                        placement: {
+                            align: 'center'
+                        }
+                    });
+                    self.newFile = undefined;
+                    self.setUnusedMedia();
+                }
+            }, function(reason) {
+                console.log('failed to upload media');
+                console.log(reason);
             });
         }
     }

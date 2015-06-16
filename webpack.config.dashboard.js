@@ -1,4 +1,6 @@
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var webpack = require('webpack');
+
 module.exports = {
     entry: {
         dashboard: "./static/dashboard-assets.js"
@@ -6,6 +8,15 @@ module.exports = {
     output: {
         path: __dirname + '/static',
         filename: "[name]-bundle.js"
+    },
+    resolve: {
+        alias: {
+            bootbox: 'bootbox',
+            bootstrapNotify: 'bootstrap-notify'
+        }
+    },
+    externals: {
+        jquery: 'jQuery'
     },
     module: {
         loaders: [{

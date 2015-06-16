@@ -1,15 +1,21 @@
+require('bootstrapNotify');
 var models = {
     Media: require('../../models/media.js').Media
 };
+
 var mediaListViewTemplate = require('./media-list-view.html');
 var MediaListView = Backbone.View.extend({
     events: {
         'click a.delete-media': 'deleteMedia'
     },
 
-    initialize: function() {
+    initialize: function(options) {
         _.bindAll(this, 'render', 'deleteMedia');
         this.template = mediaListViewTemplate;
+
+        this.deleteMediaDelegate =
+            options.delegates && options.delegates.deleteMedia ?
+            options.delegates.deleteMedia : function(){};
     },
 
     render: function() {
@@ -20,7 +26,10 @@ var MediaListView = Backbone.View.extend({
     },
 
     deleteMedia: function(e) {
-        models.Media.destroy($(e.currentTarget).data('media-id'));
+        this.deleteMediaDelegate(
+            $(e.currentTarget).data('media-name'),
+            $(e.currentTarget).data('media-id')
+        );
     }
 });
 

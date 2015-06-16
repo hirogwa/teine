@@ -1,6 +1,5 @@
 <table id="media-summaries" class="table table-hover">
   <thead>
-    <th></th>
     <th>File</th>
     <th>Size</th>
     <th>Type</th>
@@ -13,18 +12,17 @@
       <td>
         <a class="media-link" href="/media/<%= m.get('media_id') %>"
            target="_blank">
-          <i class="fa fa-play-circle"></i>
+          <%= m.get('name') %>
         </a>
       </td>
-      <td>
-        <%= m.get('name') %></td>
       <td><%= m.formattedSize() %></td>
       <td><%= m.get('contentType') %></td>
       <td><%= m.get('status') %></td>
       <td>
         <% if (m.get('status') === 'draft') { %>
         <a href="#" class="delete-media"
-           data-media-id="<%= m.get('media_id') %>">
+           data-media-id="<%= m.get('media_id') %>"
+           data-media-name="<%= m.get('name') %>">
           <i class="fa fa-times"></i> Delete
         </a>
         <% } %>

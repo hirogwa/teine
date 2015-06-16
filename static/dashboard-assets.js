@@ -1,4 +1,5 @@
 teine = {};
+bootbox = require('bootbox');
 $(function() {
     require('./css/dashboard.css');
 
