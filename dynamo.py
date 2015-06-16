@@ -35,7 +35,7 @@ def query(table_name, **kwargs):
 
 def scan(table_name, **kwargs):
     table = Table(table_name, connection=conn)
-    return table.scan()
+    return table.scan(**kwargs)
 
 
 def delete(table_name, **kwargs):

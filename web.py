@@ -274,7 +274,7 @@ def download_media(media_id):
 @app.route('/media-list', methods=['GET'])
 @flask_login.login_required
 def retrieve_media_list():
-    media_list = models.Media.get_list(flask_login.current_user)
+    media_list = models.Media.get_list(flask_login.current_user.user_id)
     filter_param = request.args.get('filter')
     if filter_param == 'unused':
         media_list = filter(

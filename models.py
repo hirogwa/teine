@@ -135,10 +135,10 @@ class Link():
 class Media():
     table_name = 'teine-Media'
 
-    def __init__(self, media_id, owner_user, name='', content_type=None,
+    def __init__(self, media_id, owner_user_id, name='', content_type=None,
                  size=0, episode_id=None, status=None, schedule_date=None):
         self.media_id = media_id
-        self.owner_user = owner_user
+        self.owner_user_id = owner_user_id
         self.name = name
         self.content_type = content_type
         self.size = size
@@ -160,8 +160,11 @@ class Media():
         return None
 
     @classmethod
-    def get_list(cls, user):
-        rs = dynamo.scan(cls.table_name)
+    def get_list(cls, user_id):
+        options = {
+            'owner_user_id__eq': user_id
+        }
+        rs = dynamo.scan(cls.table_name, **options)
         return map(lambda x: Media(**x), rs)
 
     def associate_episode(self, episode_id, status, schedule_date=None):
@@ -180,7 +183,7 @@ class Media():
     def export(self):
         return {
             'media_id': self.media_id,
-            'owner_user': self.owner_user,
+            'owner_user_id': self.owner_user_id,
             'episode_id': self.episode_id,
             'name': self.name,
             'content_type': self.content_type,

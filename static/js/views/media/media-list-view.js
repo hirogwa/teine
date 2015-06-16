@@ -1,3 +1,6 @@
+var models = {
+    Media: require('../../models/media.js').Media
+};
 var mediaListViewTemplate = require('./media-list-view.html');
 var MediaListView = Backbone.View.extend({
     events: {
