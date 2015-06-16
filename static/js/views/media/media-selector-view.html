@@ -3,7 +3,6 @@
   <thead>
     <tr>
       <th></th>
-      <th></th>
       <th>File name</th>
       <th>Size</th>
       <th></th>
@@ -27,10 +26,9 @@
       <td>
         <a class="media-link" href="/media/<%= m.get('media_id') %>"
            target="_blank">
-          <i class="fa fa-play-circle"></i>
+          <%= m.get('name') %>
         </a>
       </td>
-      <td><%= m.get('name') %></td>
       <td><%= m.formattedSize() %></td>
       <td>
         <% if (m.get('selector-selected')) { %>
