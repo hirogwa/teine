@@ -49,7 +49,9 @@ var EpisodeEditorView = Backbone.View.extend({
                             models.Media.existingData(data.media) : undefined;
                         if (options.copy_mode) {
                             episode.set({
-                                episode_id: undefined
+                                episode_id: undefined,
+                                title: 'Copy of {}'
+                                    .replace('{}', episode.get('title'))
                             });
                         }
 
@@ -106,6 +108,7 @@ var EpisodeEditorView = Backbone.View.extend({
             self.render();
         }, function(reason) {
             console.log('failed to initialize episode editor');
+            console.log(reason);
         });
     },
 

@@ -20,13 +20,13 @@ var Episode = Backbone.Model.extend({
         this.save(null, {
             success: function(model, response) {
                 if (response.result === 'success') {
-                    window.location.replace('?updated=success');
+                    window.location.replace('/episode-list?notify=episodeSaved');
                 } else {
-                    window.location.replace('?updated=error');
+                    window.location.replace('/episode-list?notify=error');
                 }
             },
             error: function(model, xhr) {
-                window.location.replace('?updated=error');
+                window.location.replace('/episode-list?notify=error');
             }
         });
     },
@@ -76,6 +76,21 @@ Episode.existingData = function(input) {
         guests: guests,
         links: links,
         status: input.status
+    });
+};
+
+Episode.destroy = function(episodeId) {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: '/episode/' + episodeId,
+            method: 'DELETE',
+            success: function(data) {
+                resolve(data);
+            },
+            error: function(data) {
+                reject(data);
+            }
+        });
     });
 };
 

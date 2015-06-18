@@ -5,6 +5,8 @@ var models = {
     Show: require('../../models/show.js').Show
 };
 
+var notify = require('../utils/notification.js').notify;
+
 var showEditorTemplate = require('./show-editor.html');
 var ShowEditorView = Backbone.View.extend({
     el: $('#show-editor'),
@@ -68,16 +70,18 @@ var ShowEditorView = Backbone.View.extend({
             tagline: $('#show-tagline').val(),
             description: $('#show-description').val()
         });
+        var saving = notify.saving();
         this.show.save(null, {
             success: function(model, response) {
                 if (response.result === 'success') {
-                    window.location.replace('?updated=success');
+                    saving.close();
+                    notify.saved();
                 } else {
-                    window.location.replace('?updated=error');
+                    notify.error();
                 }
             },
             error: function(model, xhr) {
-                window.location.replace('?updated=error');
+                notify.error();
             }
         });
     }

@@ -64,9 +64,9 @@ class Episode():
         self.summary = summary
         self.description = description
         self.media_id = media_id
-        self.media = None
+        self._media = None
         self.guest_ids = guest_ids
-        self.guests = []
+        self._guests = []
         self.links = links
         self.status = status
 
@@ -92,13 +92,19 @@ class Episode():
             return Episode(**val)
         return [adjust(val) for val in rs]
 
-    def load_guests(self):
-        self.guests = map(lambda x: Personality.get_by_id(x), self.guest_ids)
-        return self
+    @property
+    def guests(self):
+        if not self._guests:
+            self._guests = map(
+                lambda x: Personality.get_by_id(x), self.guest_ids)
+        return self._guests
 
-    def load_media(self):
-        self.media = Media.get_by_id(self.media_id) if self.media_id else None
-        return self
+    @property
+    def media(self):
+        if not self._media:
+            self._media = (Media.get_by_id(self.media_id)
+                           if self.media_id else None)
+        return self._media
 
     def export(self):
         return {
@@ -118,6 +124,12 @@ class Episode():
     def save(self):
         dynamo.update(self.table_name, self.export())
         return self
+
+    def delete(self):
+        if self.media:
+            self.media.dissociate_episode()
+        dynamo.delete(self.table_name, episode_id=self.episode_id)
+        return True
 
 
 class Link():

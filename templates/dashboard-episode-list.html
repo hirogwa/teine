@@ -14,7 +14,11 @@
 
 <script type="text/javascript">
     $(function() {
-        new teine.EpisodeListView();
+        new teine.EpisodeListView(
+            {% if notify %}
+            { {{ notify }}: true }
+            {% endif %}
+        );
     });
 </script>
 {% endblock %}

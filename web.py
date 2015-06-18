@@ -121,26 +121,31 @@ def page_copy_episode(episode_id):
     return page_episode(episode_id, True)
 
 
-@app.route('/episode/<episode_id>', methods=['GET'])
+@app.route('/episode/<episode_id>', methods=['GET', 'DELETE'])
 @flask_login.login_required
 def page_load_episode(episode_id):
-    return page_episode(episode_id,
-                        updated={'result': request.args.get('updated')})
+    if 'GET' == request.method:
+        return page_episode(episode_id)
+    if 'DELETE' == request.method:
+        models.Episode.get_by_id(episode_id).delete()
+        return json_response({
+            'result': 'success'
+        })
 
 
-def page_episode(episode_id=None, copy_mode=False, updated=None):
+def page_episode(episode_id=None, copy_mode=False):
     kwargs = dashboard_template_args(sidebar_episodes='active')
     if episode_id:
         kwargs['episode_id'] = episode_id
         kwargs['copy_mode'] = 'true' if copy_mode else 'false'
-        kwargs['updated'] = updated
     return render_template('dashboard-episode.html', **kwargs)
 
 
 @app.route('/episode-list', methods=['GET'])
 @flask_login.login_required
 def episode_list():
-    kwargs = dashboard_template_args(sidebar_episodes='active')
+    kwargs = dashboard_template_args(
+        sidebar_episodes='active', notify=request.args.get('notify'))
     return render_template('dashboard-episode-list.html', **kwargs)
 
 
@@ -196,7 +201,7 @@ def episode():
         })
 
     if 'GET' == request.method:
-        ep = models.Episode.get_by_id(request.args['episode_id']).load_guests()
+        ep = models.Episode.get_by_id(request.args['episode_id'])
         result = {
             'episode': ep.export()
         }
@@ -210,8 +215,7 @@ def episode():
 def episodes():
     if 'GET' == request.method:
         return json_response(list(map(
-            lambda x: x.load_guests().load_media().export(),
-            models.Episode.get_list())))
+            lambda x: x.export(), models.Episode.get_list())))
 
 
 @app.route('/upload-media', methods=['POST'])

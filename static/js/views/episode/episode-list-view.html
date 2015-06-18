@@ -7,7 +7,6 @@
       <th>Guests</th>
       <th>Status</th>
       <th></th>
-      <th></th>
     </tr>
   </thead>
   <tbody id="episode-summaries">
@@ -47,12 +46,16 @@
            href="/episode/<%= e.get('episode_id') %>" id="episode-summary-edit">
           <i class="fa fa-pencil-square-o"></i> Edit
         </a>
-      </td>
-      <td>
         <a class="btn btn-sm btn-default"
            href="/episode/copy/<%= e.get('episode_id') %>">
           <i class="fa fa-files-o"></i> Copy
         </a>
+        &nbsp;
+        <button type="button" class="btn btn-sm btn-danger" id="delete-episode"
+                data-episode-id="<%= e.get('episode_id') %>"
+                data-episode-title="<%= e.get('title') %>">
+          <i class="fa fa-trash-o"></i>
+        </button>
       </td>
     </tr>
     <% }); %>

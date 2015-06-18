@@ -6,7 +6,10 @@ var views = {
     MediaListView: require('../media/media-list-view.js').MediaListView
 };
 
+var notify = require('../utils/notification.js').notify;
+var dialog = require('../utils/dialog.js').dialog;
 require('bootstrapNotify');
+
 var mediaManagerTemplate = require('./media-manager.html');
 var MediaManagerView = Backbone.View.extend({
     el: $('#media-manager'),
@@ -62,50 +65,21 @@ var MediaManagerView = Backbone.View.extend({
 
     deleteMedia: function(mediaName, mediaId) {
         var self = this;
-        bootbox.dialog({
-            message: 'Are you sure you want to delete {}?'
-                .replace('{}', mediaName),
-            buttons: {
-                cancel: {
-                    label: 'Cancel',
-                    className: 'btn-default'
-                },
-                danger: {
-                    label: 'Delete',
-                    className: 'btn-danger',
-                    callback: function() {
-                        var notifyDeleting = $.notify({
-                            message: 'Deleting {}...'.replace('{}', mediaName)
-                        }, {
-                            type: 'info',
-                            delay: 0,
-                            placement: {
-                                align: 'center'
-                            }
-                        });
+        dialog.confirmDelete(mediaName, function() {
+            var notifyDeleting = notify.doing(
+                'Deleting {}...'.replace('{}', mediaName));
 
-                        models.Media.destroy(mediaId).then(function(result) {
-                            if (result.result === 'success') {
-                                notifyDeleting.close();
-                                $.notify({
-                                    message: '{} deleted!'
-                                        .replace('{}', mediaName)
-                                }, {
-                                    type: 'info',
-                                    newest_on_top: true,
-                                    placement: {
-                                        align: 'center'
-                                    }
-                                });
-                                self.setUnusedMedia();
-                            }
-                        }, function(reason) {
-                            console.log('failed to delete media');
-                            console.log(reason);
-                        });
-                    }
+            models.Media.destroy(mediaId).then(function(result) {
+                if (result.result === 'success') {
+                    notifyDeleting.close();
+                    notify.done(
+                        '{} deleted!'.replace('{}', mediaName));
+                    self.setUnusedMedia();
                 }
-            }
+            }, function(reason) {
+                console.log('failed to delete media');
+                console.log(reason);
+            });
         });
     },
 
@@ -135,7 +109,6 @@ var MediaManagerView = Backbone.View.extend({
 
     changeInputFile: function(e) {
         this.newFile = e.currentTarget.files[0];
-        console.log(this.newFile);
         var file_size_upperbound = 80000000; // 80MB
         if (this.newFile.size < file_size_upperbound) {
             this.render();
@@ -154,25 +127,13 @@ var MediaManagerView = Backbone.View.extend({
                 data: data
             });
 
-            var notifyUploading = $.notify({
-                message: 'Uploading {}...'.replace('{}', this.newFile.name)
-            }, {
-                delay: 0,
-                placement: {
-                    align: 'center'
-                }
-            });
+            var notifyUploading = notify.doing(
+                'Uploading {}...'.replace('{}', this.newFile.name));
             media.upload().then(function(result) {
                 if (result.result === 'success') {
                     notifyUploading.close();
-                    $.notify({
-                        message: '{} uploaded!'.replace('{}', self.newFile.name)
-                    }, {
-                        newest_on_top: true,
-                        placement: {
-                            align: 'center'
-                        }
-                    });
+                    notify.done(
+                        '{} uploaded!'.replace('{}', self.newFile.name));
                     self.newFile = undefined;
                     self.setUnusedMedia();
                 }
