@@ -31,7 +31,7 @@ var MediaManagerView = Backbone.View.extend({
         models.MediaCollection.loadUnused().then(function(result) {
             self.resetMediaListView(result);
             self.render({
-                tabStatusUnused: 'active'
+                kind: 'unused'
             });
         }, function(reason){
             console.log('failed to initialize');
@@ -40,16 +40,16 @@ var MediaManagerView = Backbone.View.extend({
 
     render: function(args) {
         var options = args || {};
-        if (!options.tabStatusUsed) {
-            options.tabStatusUnused = 'active';
-        }
+        options.kind = options.kind || 'used';
         this.$el.html(this.template({
             inputFileName: this.newFile ? this.newFile.name : '',
             buttonUploadState: this.newFile ? '' : 'disabled',
-            tabStatusUsed: options.tabStatusUsed,
-            tabStatusUnused: options.tabStatusUnused
+            tabStatusUsed: options.kind === 'used' ? 'active' : '',
+            tabStatusUnused: options.kind === 'unused' ? 'active' : ''
         }));
-        this.$('#media-list').append(this.mediaListView.render().el);
+        this.$('#media-list').append(this.mediaListView.render({
+            kind: options.kind
+        }).el);
         return this;
     },
 
@@ -88,7 +88,7 @@ var MediaManagerView = Backbone.View.extend({
         return models.MediaCollection.loadUsed().then(function(result) {
             self.resetMediaListView(result);
             self.render({
-                tabStatusUsed: 'active'
+                kind: 'used'
             });
         }, function(reason){
             console.log(reason);
@@ -100,7 +100,7 @@ var MediaManagerView = Backbone.View.extend({
         return models.MediaCollection.loadUnused().then(function(result) {
             self.resetMediaListView(result);
             self.render({
-                tabStatusUnused: 'active'
+                kind: 'unused'
             });
         }, function(reason) {
             console.log(reason);
@@ -130,14 +130,18 @@ var MediaManagerView = Backbone.View.extend({
             var notifyUploading = notify.doing(
                 'Uploading {}...'.replace('{}', this.newFile.name));
             media.upload().then(function(result) {
+                notifyUploading.close();
                 if (result.result === 'success') {
-                    notifyUploading.close();
                     notify.done(
                         '{} uploaded!'.replace('{}', self.newFile.name));
                     self.newFile = undefined;
                     self.setUnusedMedia();
+                } else {
+                    notify.error();
                 }
             }, function(reason) {
+                notifyUploading.close();
+                notify.error();
                 console.log('failed to upload media');
                 console.log(reason);
             });

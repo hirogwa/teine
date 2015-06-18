@@ -1,3 +1,5 @@
+var utils = require('../utils.js');
+
 var Media = Backbone.Model.extend({
     upload: function() {
         var self = this;
@@ -23,6 +25,10 @@ var Media = Backbone.Model.extend({
 
     formattedSize: function() {
         return '{} MB'.replace('{}', (this.get('size') / 1000000).toFixed(2));
+    },
+
+    formattedDatetime: function() {
+        return utils.formatDatetime(new Date(this.get('datetime')));
     }
 });
 
@@ -52,7 +58,9 @@ Media.existingData = function(input) {
         name: input.name,
         size: input.size,
         contentType: input.content_type,
-        status: input.status
+        status: input.status,
+        datetime: input.datetime,
+        episode: input.episode
     });
 };
 

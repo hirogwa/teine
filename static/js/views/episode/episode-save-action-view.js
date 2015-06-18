@@ -1,3 +1,5 @@
+var utils = require('../../utils.js');
+
 var episodeSaveActionViewTemplate =
     require('./episode-save-action-view.html');
 var EpisodeSaveActionView = Backbone.View.extend({
@@ -32,17 +34,9 @@ var EpisodeSaveActionView = Backbone.View.extend({
         }
         this.savedAs = this.savedAs || 'draft';
         if (!this.scheduleDate) {
-            var today = new Date();
-            this.scheduleDate = 'yyyy-mm-dd'
-                .replace('yyyy', today.getFullYear())
-                .replace('mm', this.formatTwoDigits(today.getMonth() + 1))
-                .replace('dd', this.formatTwoDigits(today.getDate()));
+            this.scheduleDate = utils.formatDate(new Date());
         }
         this.render();
-    },
-
-    formatTwoDigits: function(n) {
-        return n < 10 ? '0{}'.replace('{}', n) : n;
     },
 
     render: function() {

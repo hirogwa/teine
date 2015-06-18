@@ -188,8 +188,7 @@ def episode():
                     original.media_id).dissociate_episode().save()
             if ep.media_id:
                 models.Media.get_by_id(ep.media_id).associate_episode(
-                    ep.episode_id, ep.status.get('saved_as'),
-                    ep.status.get('schedule_date')).save()
+                    ep.episode_id).save()
             ep.save()
         else:
             ep = models.Episode.create_new(
@@ -286,7 +285,8 @@ def retrieve_media_list():
     if filter_param == 'used':
         media_list = filter(
             lambda x: x.associated_with_episode(), media_list)
-    return json_response(map(lambda x: x.export(), media_list))
+    return json_response(map(
+        lambda x: x.export_with_episode_summary(), media_list))
 
 
 @app.route('/link-info', methods=['GET'])

@@ -2,9 +2,13 @@
   <thead>
     <th>File</th>
     <th>Size</th>
-    <th>Type</th>
-    <th>Status</th>
+    <th>Date uploaded</th>
+    <% if (showEpisode) { %>
+    <th>Episode</th>
+    <% } %>
+    <% if (showDelete) { %>
     <th></th>
+    <% } %>
   </thead>
   <tbody>
     <% mediaList.forEach(function(m) { %>
@@ -16,17 +20,29 @@
         </a>
       </td>
       <td><%= m.formattedSize() %></td>
-      <td><%= m.get('contentType') %></td>
-      <td><%= m.get('status') %></td>
+      <td><%= m.formattedDatetime() %></td>
+
+      <% if (showEpisode) { %>
       <td>
-        <% if (m.get('status') === 'draft') { %>
-        <a href="#" class="delete-media"
-           data-media-id="<%= m.get('media_id') %>"
-           data-media-name="<%= m.get('name') %>">
-          <i class="fa fa-times"></i> Delete
+        <% var ep = m.get('episode');
+           if (ep) { %>
+        <a href="/episode/<%= ep.episode_id %>">
+          <%= ep.title %>
         </a>
+        <% } else { %>
         <% } %>
       </td>
+      <% } %>
+
+      <% if (showDelete) { %>
+      <td>
+        <button type="button" class="btn btn-sm btn-danger delete-media"
+                data-media-id="<%= m.get('media_id') %>"
+                data-media-name="<%= m.get('name') %>">
+          <i class="fa fa-trash-o"></i>
+        </button>
+      </td>
+      <% } %>
     </tr>
     <% }); %>
   </tbody>

@@ -1,6 +1,7 @@
-import dynamo
+import datetime
 import uuid
 
+import dynamo
 import settings
 
 
@@ -148,21 +149,20 @@ class Media():
     table_name = 'teine-Media'
 
     def __init__(self, media_id, owner_user_id, name='', content_type=None,
-                 size=0, episode_id=None, status=None, schedule_date=None):
+                 size=0, episode_id=None, datetime=None):
         self.media_id = media_id
         self.owner_user_id = owner_user_id
         self.name = name
         self.content_type = content_type
         self.size = size
         self.episode_id = episode_id
-        self.status = status
-        self.schedule_date = schedule_date
+        self._episode = None
+        self.datetime = datetime
 
     @classmethod
     def create_new(cls, owner_user_id, filename, **kwargs):
         return Media(
-            str(uuid.uuid4()), owner_user_id, filename,
-            status='draft', **kwargs)
+            str(uuid.uuid4()), owner_user_id, filename, **kwargs)
 
     @classmethod
     def get_by_id(cls, media_id):
@@ -179,10 +179,8 @@ class Media():
         rs = dynamo.scan(cls.table_name, **options)
         return map(lambda x: Media(**x), rs)
 
-    def associate_episode(self, episode_id, status, schedule_date=None):
+    def associate_episode(self, episode_id):
         self.episode_id = episode_id
-        self.status = status
-        self.schedule_date = schedule_date
         return self
 
     def dissociate_episode(self):
@@ -192,6 +190,12 @@ class Media():
     def associated_with_episode(self):
         return self.episode_id is not None
 
+    @property
+    def episode(self):
+        if not self._episode:
+            self._episode = Episode.get_by_id(self.episode_id)
+        return self._episode
+
     def export(self):
         return {
             'media_id': self.media_id,
@@ -200,12 +204,23 @@ class Media():
             'name': self.name,
             'content_type': self.content_type,
             'size': str(self.size),
-            'status': self.status,
-            'schedule_date': self.schedule_date
+            'datetime': self.datetime
         }
 
+    def export_with_episode_summary(self):
+        result = self.export()
+        if self.episode_id:
+            result['episode'] = {
+                'episode_id': self.episode.episode_id,
+                'title': self.episode.title,
+                'status': self.episode.status
+            }
+        return result
+
     def save(self):
-        dynamo.update(self.table_name, self.export())
+        data = self.export()
+        data['datetime'] = datetime.datetime.utcnow().isoformat()
+        dynamo.update(self.table_name, data)
         return self
 
     def delete(self):

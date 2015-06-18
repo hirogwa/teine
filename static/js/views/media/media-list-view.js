@@ -6,7 +6,7 @@ var models = {
 var mediaListViewTemplate = require('./media-list-view.html');
 var MediaListView = Backbone.View.extend({
     events: {
-        'click a.delete-media': 'deleteMedia'
+        'click button.delete-media': 'deleteMedia'
     },
 
     initialize: function(options) {
@@ -18,9 +18,12 @@ var MediaListView = Backbone.View.extend({
             options.delegates.deleteMedia : function(){};
     },
 
-    render: function() {
+    render: function(args) {
+        var options = args || {};
         this.$el.html(this.template({
-            mediaList: this.collection
+            mediaList: this.collection,
+            showEpisode: options.kind === 'used',
+            showDelete: options.kind === 'unused'
         }));
         return this;
     },
