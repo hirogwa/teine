@@ -127,7 +127,10 @@ def page_load_episode(episode_id):
     if 'GET' == request.method:
         return page_episode(episode_id)
     if 'DELETE' == request.method:
-        models.Episode.get_by_id(episode_id).delete()
+        ep = models.Episode.get_by_id(episode_id)
+        if ep.media_id:
+            ep.media.dissociate_episode().save()
+        ep.delete()
         return json_response({
             'result': 'success'
         })
@@ -181,18 +184,20 @@ def episode():
 
         ep_id = in_data.get('episode_id')
         if ep_id:
-            original = models.Episode.get_by_id(ep_id)
             ep = models.Episode(show_id=user.get_show_id(), **in_data)
+            original = models.Episode.get_by_id(ep_id)
             if original.media_id != ep.media_id and original.media_id:
-                models.Media.get_by_id(
-                    original.media_id).dissociate_episode().save()
-            if ep.media_id:
-                models.Media.get_by_id(ep.media_id).associate_episode(
-                    ep.episode_id).save()
-            ep.save()
+                original_model = models.Media.get_by_id(original.media_id)
+                original_model.dissociate_episode().save()
         else:
             ep = models.Episode.create_new(
-                show_id=user.get_show_id(), **in_data).save()
+                show_id=user.get_show_id(), **in_data)
+
+        if ep.media_id:
+            model = models.Media.get_by_id(ep.media_id)
+            model.associate_episode(ep.episode_id).save()
+
+        ep.save()
 
         return json_response({
             'result': 'success',

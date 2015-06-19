@@ -16,18 +16,21 @@ var Episode = Backbone.Model.extend({
         });
     },
 
-    saveAndRedirect: function() {
-        this.save(null, {
-            success: function(model, response) {
-                if (response.result === 'success') {
-                    window.location.replace('/episode-list?notify=episodeSaved');
-                } else {
-                    window.location.replace('/episode-list?notify=error');
+    savePromise: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            self.save(null, {
+                success: function(model, response) {
+                    if (response.result === 'success') {
+                        resolve(response);
+                    } else {
+                        reject(response);
+                    }
+                },
+                error: function(model, xhr) {
+                    reject(xhr);
                 }
-            },
-            error: function(model, xhr) {
-                window.location.replace('/episode-list?notify=error');
-            }
+            });
         });
     },
 
@@ -35,14 +38,14 @@ var Episode = Backbone.Model.extend({
         this.saveType({
             saved_as: 'published'
         });
-        this.saveAndRedirect();
+        return this.savePromise();
     },
 
     saveDraft: function() {
         this.saveType({
             saved_as: 'draft'
         });
-        this.saveAndRedirect();
+        return this.savePromise();
     },
 
     schedule: function(scheduled_date) {
@@ -50,7 +53,7 @@ var Episode = Backbone.Model.extend({
             saved_as: 'scheduled',
             schedule_date: scheduled_date
         });
-        this.saveAndRedirect();
+        return this.savePromise();
     }
 });
 

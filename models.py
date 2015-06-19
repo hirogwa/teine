@@ -127,8 +127,6 @@ class Episode():
         return self
 
     def delete(self):
-        if self.media:
-            self.media.dissociate_episode()
         dynamo.delete(self.table_name, episode_id=self.episode_id)
         return True
 
@@ -184,6 +182,9 @@ class Media():
         return self
 
     def dissociate_episode(self):
+        if not self.episode_id:
+            raise ValueError('Media not associated with an episode ({}, {})'
+                             .format(self.media_id, self.name))
         self.episode_id = None
         return self
 

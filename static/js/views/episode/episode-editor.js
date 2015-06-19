@@ -11,6 +11,9 @@ var views = {
     EpisodeSaveActionView: require('../episode/episode-save-action-view.js').EpisodeSaveActionView,
     MediaSelectorView: require('../media/media-selector-view.js').MediaSelectorView
 };
+
+var notify = require('../utils/notification.js').notify;
+
 var episodeEditorTemplate = require('./episode-editor.html');
 
 var EpisodeEditorView = Backbone.View.extend({
@@ -30,8 +33,8 @@ var EpisodeEditorView = Backbone.View.extend({
         _.bindAll(this, 'render',
                   'changeTitle', 'changeSummary', 'changeDescription',
                   'changeScheduleDatetime',
-                  'addPersonality', 'setSelectedMedia',
-                  'publish', 'saveDraft', 'schedule');
+                  'addPersonality', 'selectMedia', 'deselectMedia',
+                  'publish', 'saveDraft', 'schedule', 'saveAndRedirect');
         this.template = episodeEditorTemplate;
 
         var self = this;
@@ -103,7 +106,11 @@ var EpisodeEditorView = Backbone.View.extend({
                 self.mediaCollection.unshift(self.media);
             }
             self.mediaSelectorView = new views.MediaSelectorView({
-                collection: self.mediaCollection
+                collection: self.mediaCollection,
+                delegates: {
+                    selectMedia: self.selectMedia,
+                    deselectMedia: self.deselectMedia
+                }
             });
             self.render();
         }, function(reason) {
@@ -160,28 +167,37 @@ var EpisodeEditorView = Backbone.View.extend({
         }));
     },
 
+    saveAndRedirect: function(savePromise) {
+        savePromise.then(function(result) {
+            window.location.replace('/episode-list?notify=episodeSaved');
+        }, function(reason) {
+            notify.error(reason);
+        });
+    },
+
     publish: function(e) {
-        this.setSelectedMedia();
-        this.episode.publish();
+        this.saveAndRedirect(this.episode.publish());
     },
 
     saveDraft: function(e) {
-        this.setSelectedMedia();
-        this.episode.saveDraft();
+        this.saveAndRedirect(this.episode.saveDraft());
     },
 
     schedule: function(e, args) {
         var options = args || {};
-        this.setSelectedMedia();
-        this.episode.schedule(options.scheduled_date);
+        this.saveAndRedirect(this.episode.schedule(options.scheduled_date));
     },
 
-    setSelectedMedia: function() {
-        var media = this.mediaCollection.selectedMedia();
+    selectMedia: function(mediaId) {
         this.episode.set({
-            media_id: media ? media.get('media_id') : undefined
+            media_id: mediaId
         });
-        return this;
+    },
+
+    deselectMedia: function() {
+        this.episode.set({
+            media_id: undefined
+        });
     }
 });
 

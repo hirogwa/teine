@@ -5,7 +5,14 @@ var MediaSelectorView = Backbone.View.extend({
         'click button.media-selector-deselect': 'deselectMedia'
     },
 
-    initialize: function() {
+    initialize: function(args) {
+        var options = args || {};
+        if (options.delegates) {
+            this.delegates = {
+                selectMedia: options.delegates.selectMedia,
+                deselectMedia: options.delegates.deselectMedia
+            };
+        }
         _.bindAll(this, 'render', 'selectMedia');
         this.template = mediaSelectorViewTemplate;
     },
@@ -24,6 +31,7 @@ var MediaSelectorView = Backbone.View.extend({
                 'selector-selected': m.get('media_id') === targetId
             });
         });
+        this.delegates.selectMedia(targetId);
         return this.render();
     },
 
@@ -33,6 +41,7 @@ var MediaSelectorView = Backbone.View.extend({
                 'selector-selected': false
             });
         });
+        this.delegates.deselectMedia();
         return this.render();
     }
 });
