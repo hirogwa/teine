@@ -1,4 +1,18 @@
 var dialog = {
+    confirmInvalidUrl: function(linkName, addFunc) {
+        bootbox.dialog({
+            message: 'We think "{}" is an invalid link. Are you sure you want to add it?'
+                .replace('{}', linkName),
+            buttons: {
+                danger: {
+                    label: 'Add',
+                    className: 'btn-warning',
+                    callback: addFunc
+                }
+            }
+        });
+    },
+
     confirmDelete: function(entityName, postDelete) {
         bootbox.dialog({
             message: 'Are you sure you want to delete {}?'
