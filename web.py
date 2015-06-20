@@ -4,6 +4,7 @@ import html
 import flask_login
 import json
 import os
+import socket
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -299,32 +300,37 @@ def retrieve_media_list():
 def link_info():
     try:
         req = urllib.request.Request(request.args['url'], method='GET')
-        resp = urllib.request.urlopen(req)
+        resp = urllib.request.urlopen(req, timeout=5)
+
+        if resp.status == 200:
+            content = resp.read()
+            soup = BeautifulSoup(content)
+            title = soup.title
+            result = {
+                'result': 'success',
+                'title': title.string if title else ''
+            }
+        else:
+            result = {
+                'result': 'error',
+                'response_code': 'resp.status'
+            }
     except ValueError:
-        return json_response({
+        result = {
             'result': 'error',
             'reason': 'bad url'
-        })
+        }
     except urllib.error.URLError:
         result = {
             'result': 'error',
             'reason': 'no exist'
         }
-        return json_response(result)
-
-    if resp.status == 200:
-        content = resp.read()
-        soup = BeautifulSoup(content)
-        title = soup.title
-        result = {
-            'result': 'success',
-            'title': title.string if title else ''
-        }
-    else:
+    except socket.timeout:
         result = {
             'result': 'error',
-            'response_code': 'resp.status'
+            'reason': 'timeout'
         }
+
     return json_response(result)
 
 
