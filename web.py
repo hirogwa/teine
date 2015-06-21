@@ -82,6 +82,33 @@ def page_show(show_id=None, updated=None):
     return render_template('dashboard-show.html', **kwargs)
 
 
+@app.route('/profile', methods=['GET'])
+@flask_login.login_required
+def page_profile():
+    kwargs = dashboard_template_args(sidebar_profile='active')
+    kwargs['user_id'] = flask_login.current_user.user_id
+    return render_template('dashboard-profile.html', **kwargs)
+
+
+@app.route('/profile-data', methods=['GET', 'POST'])
+@flask_login.login_required
+def profile():
+    if 'GET' == request.method:
+        return json_response({
+            'result': 'success',
+            'user': flask_login.current_user.export()
+        })
+    if 'POST' == request.method:
+        userData = models.User(**request.get_json())
+        if flask_login.current_user.user_id == userData.user_id:
+            return json_response({
+                'result': 'success',
+                'user': userData.save().export()
+            })
+        else:
+            raise ValueError
+
+
 @app.route('/show', methods=['GET', 'POST'])
 @flask_login.login_required
 def show():

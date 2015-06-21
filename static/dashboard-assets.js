@@ -3,6 +3,8 @@ bootbox = require('bootbox');
 $(function() {
     require('./css/dashboard.css');
 
+    teine.ProfileEditorView =
+        require('./js/views/profile/profile-editor.js').ProfileEditorView;
     teine.ShowEditorView =
         require('./js/views/show/show-editor.js').ShowEditorView;
     teine.EpisodeEditorView =

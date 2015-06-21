@@ -1,0 +1,21 @@
+{% extends "dashboard-base.html" %}
+
+{% block dashboard_content %}
+<h2>Profile</h2>
+<hr>
+
+<div id="profile-editor">
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        {% if show_id %}
+        new teine.ProfileEditorView({
+            user_id: "{{ user_id }}"
+        });
+        {% else %}
+        new teine.ProfileEditorView();
+        {% endif %}
+    });
+</script>
+{% endblock %}

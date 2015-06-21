@@ -289,8 +289,12 @@ class Personality():
 class User():
     table_name = 'teine-User'
 
-    def __init__(self, user_id=None, shows=[]):
+    def __init__(self, user_id, first_name='', last_name='', email='',
+                 shows=[]):
         self.user_id = user_id
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
         self.shows = shows
 
         self._is_authenticated = True
@@ -321,6 +325,18 @@ class User():
 
     def get_show_id(self):
         return self.shows[0] if len(self.shows) else None
+
+    def export(self):
+        return {
+            'user_id': self.user_id,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'email': self.email
+        }
+
+    def save(self):
+        dynamo.update(self.table_name, self.export())
+        return self
 
     def is_authenticated(self):
         '''
