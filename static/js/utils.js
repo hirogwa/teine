@@ -36,8 +36,17 @@ var getUrls = function(url) {
     };
 };
 
+var toHttpUrl = function(url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    } else {
+        return 'http://{}'.replace('{}', url);
+    }
+};
+
 module.exports = {
     formatDate: formatDate,
     formatDatetime: formatDatetime,
-    getUrls: getUrls
+    getUrls: getUrls,
+    toHttpUrl: toHttpUrl
 };

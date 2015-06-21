@@ -1,6 +1,9 @@
 <td>
   <% if (status !== 'found') { %>
-  <i class="fa fa-exclamation-circle"></i>
+  <span id="warning-not-found-link" title="The link doesn't seem to exist"
+        data-toggle="tooltip">
+    <i class="fa fa-exclamation-circle"></i>
+  </span>
   <% }; %>
   <a href="<%= url %>" target="_blank"><%= title %></a>
 </td>
@@ -15,10 +18,9 @@
           class="btn btn-xs btn-default">
     <i class="fa fa-arrow-down"></i>
   </button>
-</td>
-<td>
+  &nbsp;
   <button type="button" id="remove-link"
-          class="btn btn-xs btn-default">
-    <i class="fa fa-times"></i> Remove
+          class="btn btn-xs btn-warning">
+    <i class="fa fa-times"></i>
   </button>
 </td>

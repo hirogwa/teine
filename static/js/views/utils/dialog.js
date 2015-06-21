@@ -1,5 +1,5 @@
 var dialog = {
-    confirmInvalidUrl: function(linkName, addFunc) {
+    confirmInvalidUrl: function(linkName, checkStatus, addFunc) {
         bootbox.dialog({
             message: 'We think "{}" is an invalid link. Are you sure you want to add it?'
                 .replace('{}', linkName),
@@ -7,7 +7,9 @@ var dialog = {
                 danger: {
                     label: 'Add',
                     className: 'btn-warning',
-                    callback: addFunc
+                    callback: function() {
+                        addFunc(checkStatus);
+                    }
                 }
             }
         });

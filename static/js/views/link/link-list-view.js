@@ -27,7 +27,9 @@ var LinkListView = Backbone.View.extend({
 
     checkUrlCollection: function() {
         var self = this;
-        this.collection.forEach(function(l) {
+        this.collection.filter(function(l) {
+            return !l.urlCheckStatus;
+        }).forEach(function(l) {
             self.checkUrl(l.get('url')).then(function(result) {
                 l.urlCheckStatus = 'found';
                 l.trigger('change');
@@ -57,14 +59,14 @@ var LinkListView = Backbone.View.extend({
                     title: duplLink.get('title')
                 });
                 self.pendingLink.urlCheckStatus = 'duplicate';
-                self.renderSelector(false, 'duplicate');
+                self.renderSelector(false);
             } else {
                 self.pendingLink.set({
                     url: result.url,
                     title: result.title
                 });
                 self.pendingLink.urlCheckStatus = 'found';
-                self.renderSelector(true, 'found');
+                self.renderSelector();
             }
         };
 
@@ -73,7 +75,8 @@ var LinkListView = Backbone.View.extend({
                 url: result.url,
                 title: result.title
             });
-            self.renderSelector(result.addable, result.status);
+            self.pendingLink.urlCheckStatus = result.status;
+            self.renderSelector();
         };
 
         var urlValue = e.currentTarget.value;
@@ -82,7 +85,8 @@ var LinkListView = Backbone.View.extend({
             this.pendingLink.set({
                 url: urlValue
             });
-            this.renderSelector(true, 'checking');
+            this.pendingLink.urlCheckStatus = 'checking';
+            this.renderSelector();
 
             var urls = utils.getUrls(this.pendingLink.get('url'));
             this.checkUrl(urls.ssl).then(function(sResult) {
@@ -94,6 +98,7 @@ var LinkListView = Backbone.View.extend({
                     self.checkUrl(urls.raw).then(function(rawResult) {
                         onResolve(rawResult);
                     }, function(rawReason) {
+                        rawReason.url = utils.toHttpUrl(rawReason.url);
                         onReject(rawReason);
                     });
                 });
@@ -104,7 +109,7 @@ var LinkListView = Backbone.View.extend({
                 title: ''
             });
             this.pendingLink.urlCheckStatus = undefined;
-            this.renderSelector(false);
+            this.renderSelector();
         }
     }, 500),
 
@@ -113,8 +118,7 @@ var LinkListView = Backbone.View.extend({
         return new Promise(function(resolve, reject) {
             if (!url) {
                 reject({
-                    url: url,
-                    addable: false
+                    url: url
                 });
             }
 
@@ -133,7 +137,6 @@ var LinkListView = Backbone.View.extend({
                     } else {
                         reject({
                             url: url,
-                            addable: true,
                             status: 'invalid'
                         });
                     }
@@ -141,7 +144,6 @@ var LinkListView = Backbone.View.extend({
                 error: function(data) {
                     reject({
                         url: url,
-                        addable: true,
                         status: 'error'
                     });
                 }
@@ -167,7 +169,10 @@ var LinkListView = Backbone.View.extend({
         return this;
     },
 
-    renderSelector: function(enableAddButton, checkStatus) {
+    renderSelector: function(urlAddable) {
+        var enableAddButton = urlAddable === undefined ?
+            this.pendingLink.get('url') : urlAddable;
+
         this.urlElement().val(this.pendingLink.get('url'));
         this.titleElement().val(this.pendingLink.get('title'));
 
@@ -178,6 +183,7 @@ var LinkListView = Backbone.View.extend({
         }
 
         var msgEl = this.$('#url-check-status').empty();
+        var checkStatus = this.pendingLink.urlCheckStatus;
         if (checkStatus === 'checking') {
             msgEl.append('checking...');
         } else if (checkStatus === 'found') {
@@ -205,20 +211,23 @@ var LinkListView = Backbone.View.extend({
         }
 
         var self = this;
-        var addFunc = function() {
+        var addFunc = function(checkStatus) {
+            self.pendingLink.urlCheckStatus = checkStatus;
             self.collection.add(self.pendingLink.set({
                 title: self.pendingLink.get('title') ||
                     self.pendingLink.get('url')
             }));
             self.pendingLink = new models.Link();
-            self.renderSelector(false);
+            self.renderSelector();
             self.urlElement().focus();
         };
 
-        if (this.pendingLink.urlCheckStatus === 'found') {
-            addFunc();
+        var urlCheckStatus = this.pendingLink.urlCheckStatus;
+        if (urlCheckStatus === 'found') {
+            addFunc(urlCheckStatus);
         } else {
-            dialog.confirmInvalidUrl(this.pendingLink.get('url'), addFunc);
+            dialog.confirmInvalidUrl(
+                this.pendingLink.get('url'), urlCheckStatus, addFunc);
         }
 
         return this;

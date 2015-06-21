@@ -15,7 +15,8 @@ var LinkView = Backbone.View.extend({
     },
 
     render: function(e) {
-        var index = this.model.collection.indexOf(this.model);
+        var index = this.model.collection ?
+            this.model.collection.indexOf(this.model) : -1;
         this.$el.html(this.template({
             url: this.model.get('url'),
             title: this.model.get('title'),
@@ -23,6 +24,7 @@ var LinkView = Backbone.View.extend({
             uppable: index > 0,
             downable: index > -1 && index < this.model.collection.length - 1
         }));
+        this.$('#warning-not-found-link').tooltip({ placement: 'left' });
         return this;
     },
 
