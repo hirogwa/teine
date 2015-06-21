@@ -2,25 +2,7 @@ var utils = require('../utils.js');
 
 var Media = Backbone.Model.extend({
     upload: function() {
-        var self = this;
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                url: '/upload-media',
-                data: self.get('data'),
-                cache: false,
-                processData: false,
-                contentType: false,
-                method: 'POST',
-                success: function(data) {
-                    console.log(data);
-                    resolve(data);
-                },
-                error: function(data) {
-                    console.log(data);
-                    reject(data);
-                }
-            });
-        });
+        return utils.uploadData('/upload-media', this.get('data'));
     },
 
     formattedSize: function() {

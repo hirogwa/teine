@@ -8,6 +8,7 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
 import externals
 import models
@@ -135,6 +136,22 @@ def show():
             'result': 'success',
             'show': show.export()
         })
+
+
+@app.route('/upload-show-image', methods=['POST'])
+@flask_login.login_required
+def upload_show_image():
+    uploaded_file = request.files['file']
+    temp_f = temp_filepath(uploaded_file.filename)
+    uploaded_file.save(temp_f)
+
+    image_id = str(uuid.uuid4())
+    s3_store.set_key_public_read(image_id, temp_f)
+
+    return json_response({
+        'result': 'success',
+        'image_id': image_id
+    })
 
 
 @app.route('/episode/new', methods=['GET'])

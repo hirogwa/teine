@@ -44,9 +44,31 @@ var toHttpUrl = function(url) {
     }
 };
 
+var uploadData = function(url, data) {
+        return new Promise(function(resolve, reject) {
+            $.ajax({
+                url: url,
+                data: data,
+                cache: false,
+                processData: false,
+                contentType: false,
+                method: 'POST',
+                success: function(data) {
+                    console.log(data);
+                    resolve(data);
+                },
+                error: function(data) {
+                    console.log(data);
+                    reject(data);
+                }
+            });
+        });
+};
+
 module.exports = {
     formatDate: formatDate,
     formatDatetime: formatDatetime,
     getUrls: getUrls,
-    toHttpUrl: toHttpUrl
+    toHttpUrl: toHttpUrl,
+    uploadData: uploadData
 };

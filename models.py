@@ -9,7 +9,7 @@ class Show():
     table_name = "teine-Show"
 
     def __init__(self, show_id, owner_user_id, title='', tagline='',
-                 description='', show_host_ids=[], **kwargs):
+                 description='', show_host_ids=[], image_id='', **kwargs):
         self.show_id = show_id
         self.owner_user_id = owner_user_id
         self.title = title
@@ -17,6 +17,7 @@ class Show():
         self.description = description
         self.show_host_ids = show_host_ids
         self.show_hosts = None
+        self.image_id = image_id
 
     @classmethod
     def create_new(cls, user_id, **kwargs):
@@ -45,7 +46,8 @@ class Show():
             'description': self.description,
             'show_host_ids': self.show_host_ids,
             'show_hosts': list(map(
-                lambda x: x.export(), self.show_hosts or []))
+                lambda x: x.export(), self.show_hosts or [])),
+            'image_id': self.image_id
         }
 
     def save(self):

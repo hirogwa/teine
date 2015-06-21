@@ -1,3 +1,5 @@
+var utils = require('../../utils.js');
+
 var views = {
     PersonalityListView: require('../personality/personality-list-view.js').PersonalityListView
 };
@@ -12,12 +14,13 @@ var ShowEditorView = Backbone.View.extend({
     el: $('#show-editor'),
 
     events: {
+        'change input#show-editor-image-input': 'changeInputFile',
         'click button#save-show': 'saveShow'
     },
 
     initialize: function(args) {
         var options = args || {};
-        _.bindAll(this, 'render', 'saveShow');
+        _.bindAll(this, 'render', 'saveShow', 'uploadImage', 'changeInputFile');
         this.template = showEditorTemplate;
 
         var self = this;
@@ -64,25 +67,69 @@ var ShowEditorView = Backbone.View.extend({
         return this;
     },
 
-    saveShow: function() {
-        this.show.set({
-            title: $('#show-title').val(),
-            tagline: $('#show-tagline').val(),
-            description: $('#show-description').val()
-        });
-        var saving = notify.saving();
-        this.show.save(null, {
-            success: function(model, response) {
-                if (response.result === 'success') {
-                    saving.close();
-                    notify.saved();
+    changeInputFile: function(e) {
+        this.newImageFile = e.currentTarget.files[0];
+        var element = this.$('#show-editor-file-name').empty();
+        if (this.newImageFile) {
+            element.append(this.newImageFile.name);
+        }
+        return this;
+    },
+
+    uploadImage: function(fileObj) {
+        if (!fileObj) {
+            return Promise.resolve();
+        }
+
+        var data = new FormData();
+        data.append('file', fileObj);
+
+        var notifyUploading = notify.doing(
+            'Uploading {}...'.replace('{}', fileObj.name));
+        return utils.uploadData('/upload-show-image', data)
+            .then(function(result) {
+                notifyUploading.close();
+                if (result.result === 'success') {
+                    notify.done('{} uploaded!'.replace('{}', fileObj.name));
                 } else {
                     notify.error();
                 }
-            },
-            error: function(model, xhr) {
+                return result;
+            }, function(reason) {
+                notifyUploading.close();
                 notify.error();
-            }
+                return reason;
+            });
+    },
+
+    saveShow: function() {
+        var uploadingImage = this.uploadImage(this.newImageFile);
+        console.log(uploadingImage);
+
+        var self = this;
+        uploadingImage.then(function(result) {
+            self.show.set({
+                image_id: result.image_id,
+                title: $('#show-title').val(),
+                tagline: $('#show-tagline').val(),
+                description: $('#show-description').val()
+            });
+
+            var saving = notify.saving();
+            self.show.save(null, {
+                success: function(model, response) {
+                    if (response.result === 'success') {
+                        saving.close();
+                        notify.saved();
+                    } else {
+                        notify.error();
+                    }
+                },
+                error: function(model, xhr) {
+                    notify.error();
+                }
+            });
+        }, function(reason) {
         });
     }
 });
