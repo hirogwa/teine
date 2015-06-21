@@ -145,7 +145,7 @@ def upload_show_image():
     temp_f = temp_filepath(uploaded_file.filename)
     uploaded_file.save(temp_f)
 
-    image_id = str(uuid.uuid4())
+    image_id = flask_login.current_user.get_show_id()
     s3_store.set_key_public_read(image_id, temp_f)
 
     return json_response({
