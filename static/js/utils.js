@@ -18,7 +18,26 @@ var formatDatetime = function(date) {
         .replace('mm', formatTwoDigits(date.getMinutes()));
 };
 
+var getUrls = function(url) {
+    var ssl = '';
+    var nonssl = '';
+    if (url.startsWith('http://')) {
+        nonssl = url;
+    } else if (url.startsWith('https://')) {
+        ssl = url;
+    } else {
+        ssl = 'https://{}'.replace('{}', url);
+        nonssl = 'http://{}'.replace('{}', url);
+    }
+    return {
+        ssl: ssl,
+        nonssl: nonssl,
+        raw: url
+    };
+};
+
 module.exports = {
     formatDate: formatDate,
-    formatDatetime: formatDatetime
+    formatDatetime: formatDatetime,
+    getUrls: getUrls
 };

@@ -28,7 +28,6 @@ var EpisodeSaveActionView = Backbone.View.extend({
             };
         }
         if (options && options.status) {
-            console.log(options);
             this.savedAs = options.status.saved_as;
             this.scheduleDate = options.status.schedule_date;
         }

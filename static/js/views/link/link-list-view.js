@@ -1,5 +1,7 @@
 var dialog = require('../utils/dialog.js').dialog;
 
+var utils = require('../../utils.js');
+
 var models = require('../../models/link.js');
 
 var LinkView = require('./link-view.js').LinkView;
@@ -14,13 +16,26 @@ var LinkListView = Backbone.View.extend({
 
     initialize: function() {
         _.bindAll(this, 'render', 'renderAdd', 'renderSelector',
-                  'addLink', 'inputUrl', 'checkUrl',
+                  'addLink', 'inputUrl', 'checkUrl', 'checkUrlCollection',
                   'titleElement', 'urlElement');
         this.template = linkListViewTemplate;
 
-        this.collection.on('add', this.renderAdd);
+        this.collection.on('add', this.render);
         this.collection.on('remove', this.render);
         this.pendingLink = new models.Link();
+    },
+
+    checkUrlCollection: function() {
+        var self = this;
+        this.collection.forEach(function(l) {
+            self.checkUrl(l.get('url')).then(function(result) {
+                l.urlCheckStatus = 'found';
+                l.trigger('change');
+            }, function(result) {
+                l.urlCheckStatus = result.status;
+                l.trigger('change');
+            });
+        });
     },
 
     inputTitle: function(e) {
@@ -30,26 +45,67 @@ var LinkListView = Backbone.View.extend({
     },
 
     inputUrl: _.debounce(function(e) {
-        this.pendingLink.set({
-            url: e.currentTarget.value
-        });
-
-        this.renderSelector(this.pendingLink.get('url'), 'checking');
-
         var self = this;
-        this.checkUrl(this.pendingLink.get('url')).then(function(result) {
-            self.titleElement().val(result);
-            self.pendingLink.set({
-                title: result,
-                status: 'found'
+
+        var onResolve = function(result) {
+            var duplLink = self.collection.find(function(c) {
+                return c.get('url') === result.url;
             });
-            self.renderSelector(true, 'found');
-        }, function(result) {
+            if (duplLink) {
+                self.pendingLink.set({
+                    url: result.url,
+                    title: duplLink.get('title')
+                });
+                self.pendingLink.urlCheckStatus = 'duplicate';
+                self.renderSelector(false, 'duplicate');
+            } else {
+                self.pendingLink.set({
+                    url: result.url,
+                    title: result.title
+                });
+                self.pendingLink.urlCheckStatus = 'found';
+                self.renderSelector(true, 'found');
+            }
+        };
+
+        var onReject = function(result) {
             self.pendingLink.set({
-                status: result.status
+                url: result.url,
+                title: result.title
             });
             self.renderSelector(result.addable, result.status);
-        });
+        };
+
+        var urlValue = e.currentTarget.value;
+
+        if (urlValue) {
+            this.pendingLink.set({
+                url: urlValue
+            });
+            this.renderSelector(true, 'checking');
+
+            var urls = utils.getUrls(this.pendingLink.get('url'));
+            this.checkUrl(urls.ssl).then(function(sResult) {
+                onResolve(sResult);
+            }, function(r) {
+                self.checkUrl(urls.nonssl).then(function(nonSResult) {
+                    onResolve(nonSResult);
+                }, function(r) {
+                    self.checkUrl(urls.raw).then(function(rawResult) {
+                        onResolve(rawResult);
+                    }, function(rawReason) {
+                        onReject(rawReason);
+                    });
+                });
+            });
+        } else {
+            this.pendingLink.set({
+                url: '',
+                title: ''
+            });
+            this.pendingLink.urlCheckStatus = undefined;
+            this.renderSelector(false);
+        }
     }, 500),
 
     checkUrl: function(url) {
@@ -57,16 +113,8 @@ var LinkListView = Backbone.View.extend({
         return new Promise(function(resolve, reject) {
             if (!url) {
                 reject({
+                    url: url,
                     addable: false
-                });
-            }
-
-            if (self.collection && self.collection.find(function(c) {
-                return c.get('url') === url;
-            })) {
-                reject({
-                    addable: false,
-                    status: 'duplicate'
                 });
             }
 
@@ -78,9 +126,13 @@ var LinkListView = Backbone.View.extend({
                 },
                 success: function(data) {
                     if (data.result === 'success') {
-                        resolve(data.title);
+                        resolve({
+                            url: url,
+                            title: data.title
+                        });
                     } else {
                         reject({
+                            url: url,
                             addable: true,
                             status: 'invalid'
                         });
@@ -88,6 +140,7 @@ var LinkListView = Backbone.View.extend({
                 },
                 error: function(data) {
                     reject({
+                        url: url,
                         addable: true,
                         status: 'error'
                     });
@@ -97,11 +150,13 @@ var LinkListView = Backbone.View.extend({
     },
 
     render: function() {
+        var self = this;
         this.$el.html(this.template());
         this.renderSelector();
         this.collection.models.forEach(function(l) {
             this.renderAdd(l);
         }, this);
+        this.checkUrlCollection();
         return this;
     },
 
@@ -113,6 +168,9 @@ var LinkListView = Backbone.View.extend({
     },
 
     renderSelector: function(enableAddButton, checkStatus) {
+        this.urlElement().val(this.pendingLink.get('url'));
+        this.titleElement().val(this.pendingLink.get('title'));
+
         if (enableAddButton) {
             this.$('#add-link').removeAttr('disabled');
         } else {
@@ -127,7 +185,7 @@ var LinkListView = Backbone.View.extend({
         } else if (checkStatus === 'invalid') {
             msgEl.append('seems invalid');
         } else if (checkStatus === 'duplicate') {
-            msgEl.append('you have added it already!');
+            msgEl.append('you have it already!');
         }
 
         return this;
@@ -152,13 +210,12 @@ var LinkListView = Backbone.View.extend({
                 title: self.pendingLink.get('title') ||
                     self.pendingLink.get('url')
             }));
-            self.titleElement().val('');
-            self.urlElement().val('');
-            self.renderSelector(false);
             self.pendingLink = new models.Link();
+            self.renderSelector(false);
+            self.urlElement().focus();
         };
 
-        if (this.pendingLink.get('status') === 'found') {
+        if (this.pendingLink.urlCheckStatus === 'found') {
             addFunc();
         } else {
             dialog.confirmInvalidUrl(this.pendingLink.get('url'), addFunc);

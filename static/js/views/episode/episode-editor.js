@@ -171,7 +171,7 @@ var EpisodeEditorView = Backbone.View.extend({
         savePromise.then(function(result) {
             window.location.replace('/episode-list?notify=episodeSaved');
         }, function(reason) {
-            notify.error(reason);
+            notify.error();
         });
     },
 

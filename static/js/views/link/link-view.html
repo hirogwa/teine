@@ -1,7 +1,24 @@
-<div class="external-link">
+<td>
+  <% if (status !== 'found') { %>
+  <i class="fa fa-exclamation-circle"></i>
+  <% }; %>
+  <a href="<%= url %>" target="_blank"><%= title %></a>
+</td>
+<td>
+  <button type="button" id="move-up-link"
+          <% if (!uppable) { %>disabled<% } %>
+          class="btn btn-xs btn-default">
+    <i class="fa fa-arrow-up"></i>
+  </button>
+  <button type="button" id="move-down-link"
+          <% if (!downable) { %>disabled<% } %>
+          class="btn btn-xs btn-default">
+    <i class="fa fa-arrow-down"></i>
+  </button>
+</td>
+<td>
   <button type="button" id="remove-link"
           class="btn btn-xs btn-default">
     <i class="fa fa-times"></i> Remove
   </button>
-  <a href="<%= url %>" target="_blank"><%= title %></a>
-</div>
+</td>
