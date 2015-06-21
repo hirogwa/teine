@@ -23,7 +23,7 @@ class Show():
         return Show(str(uuid.uuid4()), user_id, **kwargs)
 
     @classmethod
-    def get_by_id(cls, show_id, user):
+    def get_by_id(cls, show_id):
         rs = dynamo.query(cls.table_name, show_id__eq=show_id)
         for val in rs:
             return Show(**val)
@@ -290,12 +290,12 @@ class User():
     table_name = 'teine-User'
 
     def __init__(self, user_id, first_name='', last_name='', email='',
-                 shows=[]):
+                 show_ids=[]):
         self.user_id = user_id
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        self.shows = shows
+        self.show_ids = show_ids
 
         self._is_authenticated = True
         self._is_active = True
@@ -324,14 +324,15 @@ class User():
         self._user_id = value
 
     def get_show_id(self):
-        return self.shows[0] if len(self.shows) else None
+        return self.show_ids[0] if len(self.show_ids) else None
 
     def export(self):
         return {
             'user_id': self.user_id,
             'first_name': self.first_name,
             'last_name': self.last_name,
-            'email': self.email
+            'email': self.email,
+            'show_ids': self.show_ids
         }
 
     def save(self):

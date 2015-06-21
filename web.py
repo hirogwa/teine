@@ -113,9 +113,8 @@ def profile():
 @flask_login.login_required
 def show():
     if 'GET' == request.method:
-        show_id = request.args['show_id']
         user = flask_login.current_user
-        show = models.Show.get_by_id(show_id, user).load_hosts()
+        show = models.Show.get_by_id(user.get_show_id()).load_hosts()
         return json_response(show.export())
 
     if 'POST' == request.method:
