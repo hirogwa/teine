@@ -58,7 +58,11 @@ var ShowEditorView = Backbone.View.extend({
         this.$el.html(this.template({
             showTitle: this.show.get('title'),
             showTagline: this.show.get('tagline'),
-            showDescription: this.show.get('description')
+            showDescription: this.show.get('description'),
+            language: {
+                ja: this.show.get('language') === 'ja' ? 'selected' : '',
+                en: this.show.get('language') === 'en-us' ? 'selected' : ''
+            }
         }));
         this.$('#show-regular-hosts').append(this.peopleView.render().el);
 
@@ -78,7 +82,9 @@ var ShowEditorView = Backbone.View.extend({
 
     uploadImage: function(fileObj) {
         if (!fileObj) {
-            return Promise.resolve();
+            return Promise.resolve({
+                image_id: this.show.get('image_id')
+            });
         }
 
         var data = new FormData();
@@ -103,8 +109,10 @@ var ShowEditorView = Backbone.View.extend({
     },
 
     saveShow: function() {
-        var uploadingImage = this.uploadImage(this.newImageFile);
-        console.log(uploadingImage);
+        var uploadingImage = this.newImageFile ?
+            this.uploadImage(this.newImageFile) : Promise.resolve({
+                image_id: this.show.get('image_id')
+            });
 
         var self = this;
         uploadingImage.then(function(result) {
@@ -112,7 +120,8 @@ var ShowEditorView = Backbone.View.extend({
                 image_id: result.image_id,
                 title: $('#show-title').val(),
                 tagline: $('#show-tagline').val(),
-                description: $('#show-description').val()
+                description: $('#show-description').val(),
+                language: $('#show-language').val()
             });
 
             var saving = notify.saving();

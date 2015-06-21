@@ -20,6 +20,8 @@ Show.existingData = function(input) {
         title: input.title,
         tagline: input.tagline,
         description: input.description,
+        image_id: input.image_id,
+        language: input.language,
         show_hosts: show_hosts
     });
     return s;
