@@ -72,7 +72,6 @@ var LinkListView = Backbone.View.extend({
 
         var onReject = function(result) {
             self.pendingLink.set({
-                url: result.url,
                 title: result.title
             });
             self.pendingLink.urlCheckStatus = result.status;
@@ -213,10 +212,14 @@ var LinkListView = Backbone.View.extend({
         var self = this;
         var addFunc = function(checkStatus) {
             self.pendingLink.urlCheckStatus = checkStatus;
-            self.collection.add(self.pendingLink.set({
+            self.pendingLink.set({
+                url: utils.toHttpUrl(self.pendingLink.get('url'))
+            });
+            self.pendingLink.set({
                 title: self.pendingLink.get('title') ||
                     self.pendingLink.get('url')
-            }));
+            });
+            self.collection.add(self.pendingLink);
             self.pendingLink = new models.Link();
             self.renderSelector();
             self.urlElement().focus();
