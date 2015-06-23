@@ -138,20 +138,27 @@ def show():
         })
 
 
-@app.route('/upload-show-image', methods=['POST'])
+@app.route('/show-image', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_show_image():
-    uploaded_file = request.files['file']
-    temp_f = temp_filepath(uploaded_file.filename)
-    uploaded_file.save(temp_f)
-
     image_id = flask_login.current_user.get_show_id()
-    s3_store.set_key_public_read(image_id, temp_f)
+    if 'POST' == request.method:
+        uploaded_file = request.files['file']
+        temp_f = temp_filepath(uploaded_file.filename)
+        uploaded_file.save(temp_f)
 
-    return json_response({
-        'result': 'success',
-        'image_id': image_id
-    })
+        s3_store.set_key_public_read(image_id, temp_f)
+
+        return json_response({
+            'result': 'success',
+            'image_id': image_id
+        })
+
+    if 'GET' == request.method:
+        return redirect(
+            urllib.parse.urljoin(
+                settings.S3_HOST,
+                '%s/%s' % (settings.S3_BUCKET_NAME, image_id)))
 
 
 @app.route('/episode/new', methods=['GET'])
