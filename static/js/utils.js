@@ -44,25 +44,28 @@ var toHttpUrl = function(url) {
     }
 };
 
-var uploadData = function(url, data) {
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                url: url,
-                data: data,
-                cache: false,
-                processData: false,
-                contentType: false,
-                method: 'POST',
-                success: function(data) {
-                    console.log(data);
-                    resolve(data);
-                },
-                error: function(data) {
-                    console.log(data);
-                    reject(data);
-                }
-            });
+var uploadFile = function(url, file) {
+    var data = new FormData();
+    data.append('file', file);
+
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: url,
+            data: data,
+            cache: false,
+            processData: false,
+            contentType: false,
+            method: 'POST',
+            success: function(data) {
+                console.log(data);
+                resolve(data);
+            },
+            error: function(data) {
+                console.log(data);
+                reject(data);
+            }
         });
+    });
 };
 
 module.exports = {
@@ -70,5 +73,5 @@ module.exports = {
     formatDatetime: formatDatetime,
     getUrls: getUrls,
     toHttpUrl: toHttpUrl,
-    uploadData: uploadData
+    uploadFile: uploadFile
 };

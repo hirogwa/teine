@@ -121,10 +121,8 @@ var MediaManagerView = Backbone.View.extend({
     uploadMedia: function(e) {
         var self = this;
         if (this.newFile) {
-            var data = new FormData();
-            data.append('file', this.newFile);
             var media = new models.Media({
-                data: data
+                file: this.newFile
             });
 
             var notifyUploading = notify.doing(

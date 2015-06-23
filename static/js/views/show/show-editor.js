@@ -15,12 +15,14 @@ var ShowEditorView = Backbone.View.extend({
 
     events: {
         'change input#show-editor-image-input': 'changeInputFile',
+        'click button#remove-show-image': 'removeImage',
         'click button#save-show': 'saveShow'
     },
 
     initialize: function(args) {
         var options = args || {};
-        _.bindAll(this, 'render', 'saveShow', 'uploadImage', 'changeInputFile');
+        _.bindAll(this, 'render', 'renderImage', 'saveShow',
+                  'changeInputFile', 'removeImage');
         this.template = showEditorTemplate;
 
         var self = this;
@@ -59,53 +61,67 @@ var ShowEditorView = Backbone.View.extend({
             showTitle: this.show.get('title'),
             showTagline: this.show.get('tagline'),
             showDescription: this.show.get('description'),
+            imageId: this.show.get('image_id'),
             language: {
                 ja: this.show.get('language') === 'ja' ? 'selected' : '',
                 en: this.show.get('language') === 'en-us' ? 'selected' : ''
             }
         }));
         this.$('#show-regular-hosts').append(this.peopleView.render().el);
+        this.renderImage(this.show.get('image_id'));
 
         this.peopleView.postRender();
 
         return this;
     },
 
-    changeInputFile: function(e) {
-        this.newImageFile = e.currentTarget.files[0];
-        var element = this.$('#show-editor-file-name').empty();
-        if (this.newImageFile) {
-            element.append(this.newImageFile.name);
+    renderImage: function(imageExists) {
+        var elImage = this.$('#show-image').empty();
+        var elButtonRemove = this.$('#show-image-button-remove').empty();
+        if (imageExists) {
+            elImage.append(
+                '<img src="/show-image" height="150" width="150" />');
+            elButtonRemove.append(
+                '<button type="button" class="btn btn-sm btn-warning" ' +
+                    'id="remove-show-image">' +
+                    '<i class="fa fa-times"></i> Remove image' +
+                    '</button>');
         }
+
         return this;
     },
 
-    uploadImage: function(fileObj) {
-        if (!fileObj) {
-            return Promise.resolve({
-                image_id: this.show.get('image_id')
-            });
+    removeImage: function(e) {
+        this.show.set({
+            image_id: undefined
+        });
+        this.renderImage(false);
+        return this;
+    },
+
+    changeInputFile: function(e) {
+        var newFile = e.currentTarget.files[0];
+        if (!newFile) {
+            return this;
         }
 
-        var data = new FormData();
-        data.append('file', fileObj);
+        var notifyUploading =
+            notify.doing('Uploading {}...'.replace('{}', newFile.name));
 
-        var notifyUploading = notify.doing(
-            'Uploading {}...'.replace('{}', fileObj.name));
-        return utils.uploadData('/upload-show-image', data)
+        var self = this;
+        this.uploadingImage =  utils.uploadFile('/show-image', newFile)
             .then(function(result) {
                 notifyUploading.close();
-                if (result.result === 'success') {
-                    notify.done('{} uploaded!'.replace('{}', fileObj.name));
-                } else {
-                    notify.error();
-                }
-                return result;
+                notify.done('{} uploaded!'.replace('{}', newFile.name));
+                self.renderImage(result.image_id);
+                return Promise.resolve();
             }, function(reason) {
                 notifyUploading.close();
                 notify.error();
-                return reason;
+                return Promise.reject();
             });
+
+        return this;
     },
 
     saveShow: function() {
@@ -115,7 +131,7 @@ var ShowEditorView = Backbone.View.extend({
             });
 
         var self = this;
-        uploadingImage.then(function(result) {
+        (this.uploadingImage || Promise.resolve({})).then(function(result) {
             self.show.set({
                 image_id: result.image_id,
                 title: $('#show-title').val(),

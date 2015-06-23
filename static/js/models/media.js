@@ -2,7 +2,7 @@ var utils = require('../utils.js');
 
 var Media = Backbone.Model.extend({
     upload: function() {
-        return utils.uploadData('/upload-media', this.get('data'));
+        return utils.uploadFile('/upload-media', this.get('file'));
     },
 
     formattedSize: function() {
