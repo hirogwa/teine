@@ -234,6 +234,40 @@ class Media():
         return self
 
 
+class Photo():
+    table_name = 'teine-Photo'
+
+    def __init__(self, photo_id, owner_user_id, filename, size=None,
+                 content_type=None, datetime=None):
+        self.photo_id = photo_id
+        self.owner_user_id = owner_user_id
+        self.filename = filename
+        self.size = size
+        self.content_type = content_type
+        self.datetime = datetime
+
+    @classmethod
+    def create_new(cls, owner_user_id, filename, **kwargs):
+        dt = datetime.datetime.utcnow().isoformat()
+        return Photo(
+            str(uuid.uuid4()), owner_user_id, filename, datetime=dt, **kwargs)
+
+    @classmethod
+    def get_list(cls, user_id):
+        options = {
+            'owner_user_id__eq': user_id
+        }
+        rs = dynamo.scan(cls.table_name, **options)
+        return map(lambda x: Photo(**x), rs)
+
+    def export(self):
+        return self.__dict__
+
+    def save(self):
+        dynamo.update(self.table_name, self.export())
+        return self
+
+
 class Personality():
     table_name = 'teine-Personality'
 

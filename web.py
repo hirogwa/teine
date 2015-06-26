@@ -141,12 +141,12 @@ def show():
 @app.route('/show-image', methods=['GET', 'POST'])
 @flask_login.login_required
 def upload_show_image():
-    image_id = flask_login.current_user.get_show_id()
     if 'POST' == request.method:
         uploaded_file = request.files['file']
         temp_f = temp_filepath(uploaded_file.filename)
         uploaded_file.save(temp_f)
 
+        image_id = str(uuid.uuid4())
         s3_store.set_key_public_read(image_id, temp_f)
 
         return json_response({
@@ -155,6 +155,7 @@ def upload_show_image():
         })
 
     if 'GET' == request.method:
+        image_id = flask_login.current_user.get_show_id()
         return redirect(
             urllib.parse.urljoin(
                 settings.S3_HOST,
@@ -345,6 +346,48 @@ def retrieve_media_list():
         lambda x: x.export_with_episode_summary(), media_list))
 
 
+@app.route('/photos', methods=['GET'])
+@flask_login.login_required
+def page_photos():
+    kwargs = dashboard_template_args(sidebar_photos='active')
+    return render_template('dashboard-photos.html', **kwargs)
+
+
+@app.route('/load-photos', methods=['GET'])
+@flask_login.login_required
+def load_photos():
+    user_id = flask_login.current_user.user_id
+    photos = models.Photo.get_list(user_id)
+    return json_response({
+        'result': 'success',
+        'photos': map(lambda x: x.export(), photos)
+    })
+
+
+@app.route('/upload-photo', methods=['POST'])
+@flask_login.login_required
+def upload_photo():
+    uploaded_file = request.files['file']
+    temp_f = temp_filepath(uploaded_file.filename)
+
+    user = flask_login.current_user
+    uploaded_file.save(temp_f)
+    photo_info = {
+        'content_type': uploaded_file.headers.get('Content-Type'),
+        'size': os.stat(temp_f).st_size
+    }
+    photo = models.Photo.create_new(
+        user.user_id, uploaded_file.filename, **photo_info)
+
+    s3_store.set_key_public_read(photo.photo_id, temp_f)
+    photo.save()
+
+    return json_response({
+        'result': 'success',
+        'photo': photo.export()
+    })
+
+
 @app.route('/link-info', methods=['GET'])
 @flask_login.login_required
 def link_info():
@@ -446,11 +489,22 @@ def sanitized_output(d):
         return html.escape(d)
 
 
+def sanitized_json(d):
+    if isinstance(d, list):
+        return [sanitized_json(x) for x in d]
+    if isinstance(d, map):
+        return sanitized_json(list(d))
+    if isinstance(d, dict):
+        result = dict()
+        for k, v in [(k, v) for k, v in d.items() if d.get(k)]:
+            result[k] = sanitized_json(v)
+        return result
+    return sanitized_output(str(d))
+
+
 def json_response(data):
-    if type(data) is map:
-        data = list(data)
-    data = sanitized_output(data)
-    return Response(json.dumps(data), mimetype='application/json')
+    return Response(
+        json.dumps(sanitized_json(data)), mimetype='application/json')
 
 
 if __name__ == '__main__':
