@@ -24,7 +24,11 @@ Media.destroy = function(media_id) {
             dataType: 'json',
             method: 'POST',
             success: function(data) {
-                resolve(data);
+                if (data.result === 'success') {
+                    resolve();
+                } else {
+                    reject();
+                }
             },
             error: function(data) {
                 console.log(data);

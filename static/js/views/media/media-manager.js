@@ -3,7 +3,7 @@ var models = {
     MediaCollection: require('../../models/media.js').MediaCollection
 };
 var views = {
-    MediaListView: require('../media/media-list-view.js').MediaListView
+    MediaListView: require('./media-list-view.js').MediaListView
 };
 
 var notify = require('../utils/notification.js').notify;
@@ -66,19 +66,13 @@ var MediaManagerView = Backbone.View.extend({
     deleteMedia: function(mediaName, mediaId) {
         var self = this;
         dialog.confirmDelete(mediaName, function() {
-            var notifyDeleting = notify.doing(
-                'Deleting {}...'.replace('{}', mediaName));
-
+            var notifyDeleting = notify.deleting(mediaName);
             models.Media.destroy(mediaId).then(function(result) {
-                if (result.result === 'success') {
-                    notifyDeleting.close();
-                    notify.done(
-                        '{} deleted!'.replace('{}', mediaName));
-                    self.setUnusedMedia();
-                }
+                notifyDeleting.close();
+                notify.deleted(mediaName);
+                self.setUnusedMedia();
             }, function(reason) {
-                console.log('failed to delete media');
-                console.log(reason);
+                notify.error();
             });
         });
     },

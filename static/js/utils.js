@@ -57,11 +57,9 @@ var uploadFile = function(url, file) {
             contentType: false,
             method: 'POST',
             success: function(data) {
-                console.log(data);
                 resolve(data);
             },
             error: function(data) {
-                console.log(data);
                 reject(data);
             }
         });

@@ -1,6 +1,14 @@
 require('bootstrapNotify');
 
 var notify = {
+    deleting: function(entityName) {
+        return this.doing('Deleting {}...'.replace('{}', entityName));
+    },
+
+    deleted: function(entityName) {
+        return this.done('{} deleted!'.replace('{}', entityName));
+    },
+
     saving: function(message) {
         return this.doing(message || 'Saving...');
     },

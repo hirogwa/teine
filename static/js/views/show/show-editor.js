@@ -14,15 +14,12 @@ var ShowEditorView = Backbone.View.extend({
     el: $('#show-editor'),
 
     events: {
-        'change input#show-editor-image-input': 'changeInputFile',
-        'click button#remove-show-image': 'removeImage',
         'click button#save-show': 'saveShow'
     },
 
     initialize: function(args) {
         var options = args || {};
-        _.bindAll(this, 'render', 'renderImage', 'saveShow',
-                  'changeInputFile', 'removeImage');
+        _.bindAll(this, 'render', 'renderImage', 'saveShow');
         this.template = showEditorTemplate;
 
         var self = this;
@@ -87,39 +84,6 @@ var ShowEditorView = Backbone.View.extend({
                     '<i class="fa fa-times"></i> Remove image' +
                     '</button>');
         }
-
-        return this;
-    },
-
-    removeImage: function(e) {
-        this.show.set({
-            image_id: undefined
-        });
-        this.renderImage(false);
-        return this;
-    },
-
-    changeInputFile: function(e) {
-        var newFile = e.currentTarget.files[0];
-        if (!newFile) {
-            return this;
-        }
-
-        var notifyUploading =
-            notify.doing('Uploading {}...'.replace('{}', newFile.name));
-
-        var self = this;
-        this.uploadingImage =  utils.uploadFile('/show-image', newFile)
-            .then(function(result) {
-                notifyUploading.close();
-                notify.done('{} uploaded!'.replace('{}', newFile.name));
-                self.renderImage(result.image_id);
-                return Promise.resolve();
-            }, function(reason) {
-                notifyUploading.close();
-                notify.error();
-                return Promise.reject();
-            });
 
         return this;
     },

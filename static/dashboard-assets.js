@@ -13,4 +13,6 @@ $(function() {
         require('./js/views/episode/episode-list-view.js').EpisodeListView;
     teine.MediaManagerView =
         require('./js/views/media/media-manager.js').MediaManagerView;
+    teine.PhotoManagerView =
+        require('./js/views/photo/photo-manager.js').PhotoManagerView;
 });
