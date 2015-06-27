@@ -1,5 +1,6 @@
 from flask import Flask, Response, render_template, request, redirect, url_for
 from bs4 import BeautifulSoup
+from PIL import Image
 import html
 import flask_login
 import json
@@ -353,6 +354,14 @@ def page_photos():
     return render_template('dashboard-photos.html', **kwargs)
 
 
+@app.route('/photo/<photo_id>', methods=['GET'])
+@flask_login.login_required
+def download_photo(photo_id):
+    return redirect(
+        urllib.parse.urljoin(
+            settings.S3_HOST, '%s/%s' % (settings.S3_BUCKET_NAME, photo_id)))
+
+
 @app.route('/load-photos', methods=['GET'])
 @flask_login.login_required
 def load_photos():
@@ -372,12 +381,26 @@ def upload_photo():
 
     user = flask_login.current_user
     uploaded_file.save(temp_f)
+
+    content_type = uploaded_file.headers.get('Content-Type')
+
+    if content_type == 'image/jpeg':
+        image_type = 'jpeg'
+
+    thumbnail = temp_filepath('{}_thumbnail'.format(uploaded_file.filename))
+    thumbnail_id = str(uuid.uuid4())
+    im = Image.open(temp_f)
+    im.thumbnail((400, 400))
+    im.save(thumbnail, image_type)
+
+    s3_store.set_key_public_read(thumbnail_id, thumbnail)
+
     photo_info = {
         'content_type': uploaded_file.headers.get('Content-Type'),
         'size': os.stat(temp_f).st_size
     }
     photo = models.Photo.create_new(
-        user.user_id, uploaded_file.filename, **photo_info)
+        user.user_id, thumbnail_id, uploaded_file.filename, **photo_info)
 
     s3_store.set_key_public_read(photo.photo_id, temp_f)
     photo.save()

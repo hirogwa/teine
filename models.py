@@ -237,20 +237,22 @@ class Media():
 class Photo():
     table_name = 'teine-Photo'
 
-    def __init__(self, photo_id, owner_user_id, filename, size=None,
-                 content_type=None, datetime=None):
+    def __init__(self, photo_id, owner_user_id, thumbnail_id, filename,
+                 size=None, content_type=None, datetime=None):
         self.photo_id = photo_id
         self.owner_user_id = owner_user_id
+        self.thumbnail_id = thumbnail_id
         self.filename = filename
         self.size = size
         self.content_type = content_type
         self.datetime = datetime
 
     @classmethod
-    def create_new(cls, owner_user_id, filename, **kwargs):
+    def create_new(cls, owner_user_id, thumbnail_id, filename, **kwargs):
         dt = datetime.datetime.utcnow().isoformat()
         return Photo(
-            str(uuid.uuid4()), owner_user_id, filename, datetime=dt, **kwargs)
+            str(uuid.uuid4()), owner_user_id, thumbnail_id, filename,
+            datetime=dt, **kwargs)
 
     @classmethod
     def get_list(cls, user_id):
