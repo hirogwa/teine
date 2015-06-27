@@ -19,3 +19,8 @@ def set_key_public_read(key_name, file_name):
     key = bucket.new_key(key_name)
     key.set_contents_from_filename(file_name)
     key.set_acl('public-read')
+
+
+def delete_key(key_name):
+    key = bucket.get_key(key_name)
+    key.delete()

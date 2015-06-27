@@ -347,6 +347,16 @@ def retrieve_media_list():
         lambda x: x.export_with_episode_summary(), media_list))
 
 
+@app.route('/photo', methods=['DELETE'])
+@flask_login.login_required
+def photo():
+    photo_id = request.args.get('photo_id')
+    models.Photo.get_by_id(photo_id).delete()
+    return json_response({
+        'result': 'success'
+    })
+
+
 @app.route('/photos', methods=['GET'])
 @flask_login.login_required
 def page_photos():

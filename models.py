@@ -3,6 +3,7 @@ import uuid
 
 import dynamo
 import settings
+import s3_store
 
 
 class Show():
@@ -231,6 +232,7 @@ class Media():
 
     def delete(self):
         dynamo.delete(self.table_name, media_id=self.media_id)
+        s3_store.delete_key(self.media_id)
         return self
 
 
@@ -262,11 +264,23 @@ class Photo():
         rs = dynamo.scan(cls.table_name, **options)
         return map(lambda x: Photo(**x), rs)
 
+    @classmethod
+    def get_by_id(cls, photo_id):
+        rs = dynamo.query(cls.table_name, photo_id__eq=photo_id)
+        for val in rs:
+            return Photo(**val)
+        return None
+
     def export(self):
         return self.__dict__
 
     def save(self):
         dynamo.update(self.table_name, self.export())
+        return self
+
+    def delete(self):
+        dynamo.delete(self.table_name, photo_id=self.photo_id)
+        s3_store.delete_key(self.photo_id)
         return self
 
 
