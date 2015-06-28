@@ -15,7 +15,11 @@ var People = Backbone.Collection.extend({
 
     addPersonalityFromTwitter: function(params) {
         params.alias = params.screen_name;
-        this.addPersonality(params);
+        if (this.every(function(p) {
+            return p.get('alias') !== params.alias;
+        })) {
+            this.addPersonality(params);
+        }
     }
 });
 
