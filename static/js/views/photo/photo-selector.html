@@ -1,7 +1,8 @@
 <photo-selector-notify />
 
 <div class="selector-header">
-  <span class="btn btn-success btn-file btn-sm">Add new...
+  <span class="btn btn-primary btn-file btn-sm">
+    <i class="fa fa-plus"></i>Add...
     <input type="file" class="form-control"
            id="photo-selector-file-input">
   </span>
@@ -15,7 +16,7 @@
       <img src="/photo/<%= p.get('thumbnail_id') %>" />
       <% if (p.selected) { %>
       <div class="caption">
-        <i class="fa fa-check"></i> <%= p.get('filename') %>
+        <i class="fa fa-check"></i>
       </div>
       <% } %>
     </a>
