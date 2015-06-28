@@ -61,16 +61,11 @@ var PhotoManagerView = Backbone.View.extend({
         var self = this;
         var file = e.currentTarget.files[0];
         $(e.currentTarget).val('');
-        var notifyUploading =
-            notify.doing('Uploading {}...'.replace('{}', file.name));
+        var notifyUploading = notify.uploading(file.name);
         models.Photo.newFile(file).upload().then(function(result) {
             notifyUploading.close();
-            if (result.result === 'success') {
-                notify.done('{} uploaded!'.replace('{}', file.name));
-                self.refreshListView();
-            } else {
-                notify.error();
-            }
+            notify.uploaded(file.name);
+            self.refreshListView();
         }, function(reason) {
             notify.error();
         });

@@ -1,22 +1,17 @@
 var models = require('../../models/photo.js');
 
+var notify = require('../utils/notification.js').notify;
+
 var PhotoSelectorView = Backbone.View.extend({
     events: {
-        'click a.select-photo': 'selectPhoto'
+        'click a.select-photo': 'selectPhoto',
+        'change #photo-selector-file-input': 'changeInputFile'
     },
 
     initialize: function() {
-        _.bindAll(this, 'selectPhoto');
+        _.bindAll(this, 'selectPhoto', 'changeInputFile');
         this.template = require('./photo-selector.html');
-
-        var self = this;
-        this.loadCollection = models.PhotoCollection.load().then(function(result) {
-            self.collection = result;
-            self.render();
-            return Promise.resolve();
-        }, function(reason) {
-            return Promise.reject(reason);
-        });
+        this.refreshCollection();
     },
 
     selectPhoto: function(e) {
@@ -29,6 +24,36 @@ var PhotoSelectorView = Backbone.View.extend({
             this.selectedPhoto.selected = true;
         }
         this.render();
+    },
+
+    refreshCollection: function() {
+        var self = this;
+        this.loadCollection = models.PhotoCollection.load().then(function(result) {
+            self.collection = result;
+            self.render();
+            return Promise.resolve();
+        }, function(reason) {
+            return Promise.reject(reason);
+        });
+    },
+
+    changeInputFile: function(e) {
+        var self = this;
+        var file = e.currentTarget.files[0];
+        $(e.currentTarget).val('');
+
+        var notifyOptions = {
+            element: 'photo-selector-notify'
+        };
+        var notifyUploading = notify.uploading(file.name, notifyOptions);
+        models.Photo.newFile(file).upload().then(function(result) {
+            notifyUploading.close();
+            notify.uploaded(file.name, notifyOptions);
+            self.refreshCollection();
+        }, function(reason) {
+            notify.error(notifyOptions);
+        });
+        return this;
     },
 
     render: function() {

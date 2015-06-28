@@ -87,7 +87,7 @@ var ShowEditorView = Backbone.View.extend({
             elButtonRemove.append(
                 '<button type="button" class="btn btn-sm btn-warning" ' +
                     'id="remove-show-image">' +
-                    '<i class="fa fa-times"></i> Remove image' +
+                    '<i class="fa fa-times"></i> Remove' +
                     '</button>');
         }
         return this;

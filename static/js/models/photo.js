@@ -4,7 +4,16 @@ var Photo = Backbone.Model.extend({
     url: '/photo',
 
     upload: function() {
-        return utils.uploadFile('/upload-photo', this.file);
+        var file = this.file;
+        return utils.uploadFile('/upload-photo', file).then(function(result) {
+            if (result.result === 'success') {
+                return Promise.resolve(result.photo);
+            } else {
+                return Promise.reject();
+            }
+        }, function(reason) {
+            return Promise.reject();
+        });
     },
 
     formattedDatetime: function() {
