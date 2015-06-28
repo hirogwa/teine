@@ -1,0 +1,15 @@
+<div class="row">
+  <% photos.forEach(function(p) { %>
+  <div class="col-xs-4 col-md-2">
+    <a href="#" class="thumbnail select-photo"
+       data-photo-id="<%= p.get('photo_id') %>">
+      <img src="/photo/<%= p.get('thumbnail_id') %>" />
+      <% if (p.selected) { %>
+      <div class="caption">
+        <i class="fa fa-check"></i> <%= p.get('filename') %>
+      </div>
+      <% } %>
+    </a>
+  </div>
+  <% }); %>
+</div>

@@ -2,6 +2,7 @@ teine = {};
 bootbox = require('bootbox');
 $(function() {
     require('./css/dashboard.css');
+    require('./js/esnext.js');
 
     teine.ProfileEditorView =
         require('./js/views/profile/profile-editor.js').ProfileEditorView;

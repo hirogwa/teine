@@ -1,7 +1,8 @@
 var utils = require('../../utils.js');
 
 var views = {
-    PersonalityListView: require('../personality/personality-list-view.js').PersonalityListView
+    PersonalityListView: require('../personality/personality-list-view.js').PersonalityListView,
+    PhotoSelectorView: require('../photo/photo-selector.js').PhotoSelectorView
 };
 var models = {
     Show: require('../../models/show.js').Show
@@ -14,12 +15,15 @@ var ShowEditorView = Backbone.View.extend({
     el: $('#show-editor'),
 
     events: {
-        'click button#save-show': 'saveShow'
+        'click button#save-show': 'saveShow',
+        'click button#open-photo-selector': 'openPhotoSelector',
+        'click #remove-show-image': 'removeShowImage'
     },
 
     initialize: function(args) {
         var options = args || {};
-        _.bindAll(this, 'render', 'renderImage', 'saveShow');
+        _.bindAll(this, 'render', 'renderImage', 'saveShow',
+                  'openPhotoSelector', 'removeShowImage');
         this.template = showEditorTemplate;
 
         var self = this;
@@ -72,53 +76,67 @@ var ShowEditorView = Backbone.View.extend({
         return this;
     },
 
-    renderImage: function(imageExists) {
+    renderImage: function() {
+        var photo = this.show.image;
         var elImage = this.$('#show-image').empty();
         var elButtonRemove = this.$('#show-image-button-remove').empty();
-        if (imageExists) {
-            elImage.append(
-                '<img src="/show-image" height="150" width="150" />');
+
+        if (photo) {
+            elImage.append('<img src="/photo/{}" />'
+                           .replace('{}', photo.get('thumbnail_id')));
             elButtonRemove.append(
                 '<button type="button" class="btn btn-sm btn-warning" ' +
                     'id="remove-show-image">' +
                     '<i class="fa fa-times"></i> Remove image' +
                     '</button>');
         }
-
         return this;
     },
 
-    saveShow: function() {
-        var uploadingImage = this.newImageFile ?
-            this.uploadImage(this.newImageFile) : Promise.resolve({
-                image_id: this.show.get('image_id')
-            });
+    removeShowImage: function(e) {
+        this.show.image = undefined;
+        this.show.set({
+            image_id: undefined
+        });
+        this.renderImage();
+    },
 
+    openPhotoSelector: function(e) {
         var self = this;
-        (this.uploadingImage || Promise.resolve({})).then(function(result) {
+        new views.PhotoSelectorView().showDialog().then(function(result) {
+            self.show.image = result;
             self.show.set({
-                image_id: result.image_id,
-                title: $('#show-title').val(),
-                tagline: $('#show-tagline').val(),
-                description: $('#show-description').val(),
-                language: $('#show-language').val()
+                image_id: result ? result.get('photo_id') : undefined
             });
+            self.renderImage();
+        }, function(reason) {
+            notify.error();
+        });
+    },
 
-            var saving = notify.saving();
-            self.show.save(null, {
-                success: function(model, response) {
-                    if (response.result === 'success') {
-                        saving.close();
-                        notify.saved();
-                    } else {
-                        notify.error();
-                    }
-                },
-                error: function(model, xhr) {
+    saveShow: function() {
+        var self = this;
+        self.show.set({
+            image_id: result.image_id,
+            title: $('#show-title').val(),
+            tagline: $('#show-tagline').val(),
+            description: $('#show-description').val(),
+            language: $('#show-language').val()
+        });
+
+        var saving = notify.saving();
+        self.show.save(null, {
+            success: function(model, response) {
+                if (response.result === 'success') {
+                    saving.close();
+                    notify.saved();
+                } else {
                     notify.error();
                 }
-            });
-        }, function(reason) {
+            },
+            error: function(model, xhr) {
+                notify.error();
+            }
         });
     }
 });
