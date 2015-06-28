@@ -81,8 +81,7 @@ var PersonalityListView = Backbone.View.extend({
     },
 
     formatTwitterUserSelection: function(item) {
-        //return 'Type in name to add...';
-        return '';
+        return '<small><i>Search twitter user...</i></small>';
     }
 });
 
