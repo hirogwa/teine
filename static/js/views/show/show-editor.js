@@ -59,10 +59,7 @@ var ShowEditorView = Backbone.View.extend({
 
     render: function() {
         this.$el.html(this.template({
-            showTitle: this.show.get('title'),
-            showTagline: this.show.get('tagline'),
-            showDescription: this.show.get('description'),
-            imageId: this.show.get('image_id'),
+            show: this.show,
             language: {
                 ja: this.show.get('language') === 'ja' ? 'selected' : '',
                 en: this.show.get('language') === 'en-us' ? 'selected' : ''
@@ -117,8 +114,8 @@ var ShowEditorView = Backbone.View.extend({
     saveShow: function() {
         var self = this;
         self.show.set({
-            image_id: result.image_id,
             title: $('#show-title').val(),
+            author: $('#show-author').val(),
             tagline: $('#show-tagline').val(),
             description: $('#show-description').val(),
             language: $('#show-language').val()

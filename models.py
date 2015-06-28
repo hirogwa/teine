@@ -9,17 +9,19 @@ import s3_store
 class Show():
     table_name = "teine-Show"
 
-    def __init__(self, show_id, owner_user_id, title='', tagline='',
+    def __init__(self, show_id, owner_user_id, title='', author='', tagline='',
                  description='', show_host_ids=[], image_id='',
                  language='en-us', **kwargs):
         self.show_id = show_id
         self.owner_user_id = owner_user_id
         self.title = title
+        self.author = author
         self.tagline = tagline
         self.description = description
         self.show_host_ids = show_host_ids
         self.show_hosts = None
         self.image_id = image_id
+        self.image = None
         self.language = language
 
     @classmethod
@@ -40,17 +42,24 @@ class Show():
                 lambda x: Personality.get_by_id(x), self.show_host_ids)
         return self
 
+    def load_image(self):
+        if self.image_id:
+            self.image = Photo.get_by_id(self.image_id)
+        return self
+
     def export(self):
         return {
             'show_id': self.show_id,
             'owner_user_id': self.owner_user_id,
             'title': self.title,
+            'author': self.author,
             'tagline': self.tagline,
             'description': self.description,
             'show_host_ids': self.show_host_ids,
             'show_hosts': list(map(
                 lambda x: x.export(), self.show_hosts or [])),
             'image_id': self.image_id,
+            'image': self.image.export() if self.image else None,
             'language': self.language
         }
 

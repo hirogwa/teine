@@ -1,5 +1,21 @@
 <form class="form-horizontal">
   <div class="form-group">
+    <label for="show-title" class="col-sm-2 control-label">Title</label>
+    <div class="col-sm-10">
+      <input id="show-title" class="form-control"
+             value="<%= show.get('title') %>">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="show-author" class="col-sm-2 control-label">Author</label>
+    <div class="col-sm-10">
+      <input id="show-author" class="form-control"
+             value="<%= show.get('author') %>">
+    </div>
+  </div>
+
+  <div class="form-group">
     <label for="show-image" class="col-sm-2 control-label">Image</label>
     <div class="col-sm-10">
       <div id="show-image" class="thumbnail"></div>
@@ -12,22 +28,18 @@
   </div>
 
   <div class="form-group">
-    <label for="show-title" class="col-sm-2 control-label">Title</label>
-    <div class="col-sm-10">
-      <input id="show-title" class="form-control" value="<%= showTitle %>">
-    </div>
-  </div>
-  <div class="form-group">
     <label for="show-tagline" class="col-sm-2 control-label">Tagline</label>
     <div class="col-sm-10">
-      <input id="show-tagline" class="form-control" value="<%= showTagline %>">
+      <input id="show-tagline" class="form-control"
+             value="<%= show.get('tagline') %>">
     </div>
   </div>
   <div class="form-group">
     <label for="show-description"
            class="col-sm-2 control-label">Description</label>
     <div class="col-sm-10">
-      <textarea id="show-description" class="form-control"><%= showDescription %></textarea>
+      <textarea id="show-description"
+                class="form-control"><%= show.get('description') %></textarea>
     </div>
   </div>
 
