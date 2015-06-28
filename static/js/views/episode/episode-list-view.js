@@ -46,7 +46,7 @@ var EpisodeListView = Backbone.View.extend({
                 self.render();
             },
             error: function(data) {
-                console.log(data);
+                notify.error();
             }
         });
     },
@@ -73,8 +73,6 @@ var EpisodeListView = Backbone.View.extend({
             }, function(reason) {
                 notifyDeleting.close();
                 notify.error();
-                console.log('failed to delete episode');
-                console.log(reason);
             });
         });
     }

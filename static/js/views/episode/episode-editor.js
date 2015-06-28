@@ -114,7 +114,7 @@ var EpisodeEditorView = Backbone.View.extend({
             });
             self.render();
         }, function(reason) {
-            console.log('failed to initialize episode editor');
+            notify.error();
             console.log(reason);
         });
     },

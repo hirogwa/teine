@@ -31,7 +31,6 @@ Media.destroy = function(media_id) {
                 }
             },
             error: function(data) {
-                console.log(data);
                 reject(data);
             }
         });

@@ -34,7 +34,7 @@ var MediaManagerView = Backbone.View.extend({
                 kind: 'unused'
             });
         }, function(reason){
-            console.log('failed to initialize');
+            notify.error();
         });
     },
 
@@ -85,7 +85,7 @@ var MediaManagerView = Backbone.View.extend({
                 kind: 'used'
             });
         }, function(reason){
-            console.log(reason);
+            notify.error();
         });
     },
 

@@ -53,7 +53,7 @@ var ShowEditorView = Backbone.View.extend({
             });
             self.render();
         }, function() {
-            console.log('oops');
+            notify.error();
         });
     },
 
