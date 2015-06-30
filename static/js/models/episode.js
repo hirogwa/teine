@@ -7,15 +7,9 @@ var Media = require('./media.js').Media;
 var Episode = Backbone.Model.extend({
     url: '/episode',
 
-    initialize: function(args) {
-        var options = args || {};
-
-        if (!options.links) {
-            this.set({
-                links: new Links()
-            });
-        }
-        this.guests = new People();
+    defaults: {
+        links: new Links(),
+        guests: new People()
     },
 
     saveType: function(input) {
@@ -96,7 +90,7 @@ Episode.fromData = function(episode) {
         episode.guests.forEach(function(g) {
             guests.add(new Personality(g));
         });
-        delete episode.guests;
+        episode.guests = guests;
     }
 
     var links = new Links();
@@ -109,7 +103,6 @@ Episode.fromData = function(episode) {
 
     var ep = new Episode(episode);
     ep.media = media;
-    ep.guests = guests;
 
     return ep;
 };

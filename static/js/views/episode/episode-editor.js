@@ -66,7 +66,7 @@ var EpisodeEditorView = Backbone.View.extend({
             self.mediaCollection = results[1];
 
             self.peopleView = new views.PersonalityListView({
-                collection: self.episode.guests
+                collection: self.episode.get('guests')
             });
             self.linkListView = new views.LinkListView({
                 collection: self.episode.get('links')

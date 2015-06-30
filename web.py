@@ -219,6 +219,7 @@ def dashboard_template_args(**kwargs):
 
 def get_personality(g):
     user = flask_login.current_user
+    g.pop('show_id', None)
     return models.Personality.find_by_twitter(
         g.get('twitter').get('screen_name'), user.get_show_id(), True, **g)
 
@@ -238,7 +239,7 @@ def episode():
 
         ep_id = in_data.get('episode_id')
         if ep_id:
-            ep = models.Episode(show_id=user.get_show_id(), **in_data)
+            ep = models.Episode(**in_data)
             original = models.Episode.get_by_id(ep_id)
             if original.media_id != ep.media_id and original.media_id:
                 original_model = models.Media.get_by_id(original.media_id)

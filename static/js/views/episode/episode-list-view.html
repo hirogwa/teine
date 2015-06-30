@@ -24,7 +24,7 @@
         </a>
       </td>
       <td>
-        <% e.guests.forEach(function(p) { %>
+        <% e.get('guests').forEach(function(p) { %>
         <div>
           <img src="<%= p.get('twitter').profile_image_url %>" height="30" width="30" />
           <%= p.get('twitter').screen_name %>

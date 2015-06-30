@@ -137,8 +137,13 @@ class Episode():
             'status': self.status
         }
 
+    def export_to_db(self):
+        result = self.export()
+        result.pop('guests', None)
+        return result
+
     def save(self):
-        dynamo.update(self.table_name, self.export())
+        dynamo.update(self.table_name, self.export_to_db())
         return self
 
     def delete(self):
