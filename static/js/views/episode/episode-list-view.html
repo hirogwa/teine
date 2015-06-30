@@ -15,8 +15,8 @@
       <td><%= e.get('title') %></td>
       <td><%= e.get('summary') %></td>
       <td>
-        <% if (e.get('media')) { %>
-        <% m = e.get('media'); %>
+        <% if (e.media) { %>
+        <% m = e.media; %>
         <a href="/media/<%= m.get('media_id') %>" target="_blank">
           <%= '{0} ({1})'.replace('{0}', m.get('name'))
               .replace('{1}', m.formattedSize()) %>
@@ -24,10 +24,10 @@
         </a>
       </td>
       <td>
-        <% e.get('guests').forEach(function(p) { %>
+        <% e.guests.forEach(function(p) { %>
         <div>
-          <img src="<%= p.get('profile_image_url') %>" height="30" width="30" />
-          <%= p.get('alias') %>
+          <img src="<%= p.get('twitter').profile_image_url %>" height="30" width="30" />
+          <%= p.get('twitter').screen_name %>
         </div>
         <% }); %>
       </td>

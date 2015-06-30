@@ -220,7 +220,7 @@ def dashboard_template_args(**kwargs):
 def get_personality(g):
     user = flask_login.current_user
     return models.Personality.find_by_twitter(
-        g.get('alias'), user.get_show_id(), True, **g)
+        g.get('twitter').get('screen_name'), user.get_show_id(), True, **g)
 
 
 @app.route('/episode', methods=['GET', 'POST'])
@@ -260,12 +260,10 @@ def episode():
 
     if 'GET' == request.method:
         ep = models.Episode.get_by_id(request.args['episode_id'])
-        result = {
+        return json_response({
+            'result': 'success',
             'episode': ep.export()
-        }
-        if ep.media_id:
-            result['media'] = models.Media.get_by_id(ep.media_id).export()
-        return json_response(result)
+        })
 
 
 @app.route('/episodes', methods=['GET'])

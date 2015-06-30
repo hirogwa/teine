@@ -37,55 +37,36 @@ var EpisodeEditorView = Backbone.View.extend({
                   'publish', 'saveDraft', 'schedule', 'saveAndRedirect');
         this.template = episodeEditorTemplate;
 
-        var self = this;
-        var loadingEpisode = new Promise(function(resolve, reject) {
-            if (options.episode_id) {
-                $.ajax({
-                    url: '/episode',
-                    data: {
-                        episode_id: options.episode_id
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        var episode = models.Episode.existingData(data.episode);
-                        var media = data.media && !options.copy_mode ?
-                            models.Media.existingData(data.media) : undefined;
-                        if (options.copy_mode) {
-                            episode.set({
-                                episode_id: undefined,
-                                title: 'Copy of {}'
-                                    .replace('{}', episode.get('title'))
-                            });
-                        }
+        var loadEpisodeAsync = function(id) {
+            return models.Episode.load(options.episode_id).then(function(episode) {
+                if (options.copy_mode) {
+                    episode.set({
+                        episode_id: undefined,
+                        title: 'Copy of {}'
+                            .replace('{}', episode.get('title'))
+                    });
+                }
+                return Promise.resolve(episode);
+            }, function(reason) {
+                return Promise.reject();
+            });
+        };
 
-                        resolve({
-                            episode: episode,
-                            media: media
-                        });
-                    },
-                    error: function(data) {
-                        reject(data);
-                    }
-                });
-            } else {
-                resolve({
-                    episode: new models.Episode()
-                });
-            }
-        });
+        var loadingEpisode = options.episode_id ?
+            loadEpisodeAsync() : Promise.resolve(new models.Episode());
 
         var loadingMediaCollection = models.MediaCollection.loadUnused();
 
+        var self = this;
         Promise.all([
             loadingEpisode,
             loadingMediaCollection
         ]).then(function(results) {
-            self.episode = results[0].episode;
-            self.media = results[0].media;
+            self.episode = results[0];
             self.mediaCollection = results[1];
 
             self.peopleView = new views.PersonalityListView({
-                collection: self.episode.get('guests')
+                collection: self.episode.guests
             });
             self.linkListView = new views.LinkListView({
                 collection: self.episode.get('links')
@@ -99,11 +80,11 @@ var EpisodeEditorView = Backbone.View.extend({
                 status: self.episode.get('status')
             });
 
-            if (self.media) {
-                self.media.set({
+            if (self.episode.media) {
+                self.episode.media.set({
                     'selector-selected': true
                 });
-                self.mediaCollection.unshift(self.media);
+                self.mediaCollection.unshift(self.episode.media);
             }
             self.mediaSelectorView = new views.MediaSelectorView({
                 collection: self.mediaCollection,
@@ -115,7 +96,6 @@ var EpisodeEditorView = Backbone.View.extend({
             self.render();
         }, function(reason) {
             notify.error();
-            console.log(reason);
         });
     },
 

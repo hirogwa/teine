@@ -3,22 +3,16 @@ var Personality = Backbone.Model;
 var People = Backbone.Collection.extend({
     model: Personality,
 
-    addPersonality: function(params) {
-        this.add(new Personality({
-            alias: params.alias,
-            name: params.name,
-            description: params.description,
-            profile_image_url: params.profile_image_url
-                .replace('_normal', '_400x400')
-        }));
-    },
-
     addPersonalityFromTwitter: function(params) {
-        params.alias = params.screen_name;
         if (this.every(function(p) {
-            return p.get('alias') !== params.alias;
+            return !p.get('twitter') ||
+                p.get('twitter').screen_name !== params.screen_name;
         })) {
-            this.addPersonality(params);
+            params.profile_image_url = params.profile_image_url
+                .replace('_normal', '_400x400');
+            this.add(new Personality({
+                twitter: params
+            }));
         }
     }
 });

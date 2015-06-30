@@ -11,10 +11,7 @@ var PersonalityView = Backbone.View.extend({
 
     render: function() {
         this.$el.html(this.template({
-            alias: this.model.get('alias'),
-            name: this.model.get('name'),
-            description: this.model.get('description'),
-            profile_image_url: this.model.get('profile_image_url')
+            twitterUser: this.model.get('twitter')
         }));
         return this;
     },
