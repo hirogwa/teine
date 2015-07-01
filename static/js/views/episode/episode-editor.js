@@ -6,10 +6,14 @@ var models = {
 };
 
 var views = {
-    PersonalityListView: require('../personality/personality-list-view.js').PersonalityListView,
+    PersonalityListView: require('../personality/personality-list-view.js')
+        .PersonalityListView,
     LinkListView: require('../link/link-list-view.js').LinkListView,
-    EpisodeSaveActionView: require('../episode/episode-save-action-view.js').EpisodeSaveActionView,
-    MediaSelectorView: require('../media/media-selector-view.js').MediaSelectorView
+    EpisodeSaveActionView: require('../episode/episode-save-action-view.js')
+        .EpisodeSaveActionView,
+    MediaSelectorView: require('../media/media-selector-view.js')
+        .MediaSelectorView,
+    AudioSelector: require('../media/audio-selector.js').AudioSelector
 };
 
 var notify = require('../utils/notification.js').notify;
@@ -26,13 +30,14 @@ var EpisodeEditorView = Backbone.View.extend({
         'change input#schedule-datetime': 'changeScheduleDatetime',
 
         'click button#add-personality': 'addPersonality',
+        'click button#open-audio-selector': 'openAudioSelector'
     },
 
     initialize: function(args) {
         var options = args || {};
         _.bindAll(this, 'render',
                   'changeTitle', 'changeSummary', 'changeDescription',
-                  'changeScheduleDatetime',
+                  'changeScheduleDatetime', 'openAudioSelector', 'renderAudio',
                   'addPersonality', 'selectMedia', 'deselectMedia',
                   'publish', 'saveDraft', 'schedule', 'saveAndRedirect');
         this.template = episodeEditorTemplate;
@@ -132,6 +137,26 @@ var EpisodeEditorView = Backbone.View.extend({
     changeDescription: function(e) {
         this.episode.set({
             description: e.currentTarget.value
+        });
+    },
+
+    renderAudio: function() {
+        var audioEl = this.$('#episode-selected-audio');
+        audioEl.empty();
+        if (this.episode.media) {
+            audioEl.append('<a href="/media/{0}" target="_blank">{1}</a>'
+                           .replace('{0}', this.episode.media.get('media_id'))
+                           .replace('{1}', this.episode.media.get('name')));
+        }
+    },
+
+    openAudioSelector: function(e) {
+        var self = this;
+        return new views.AudioSelector().showDialog().then(function(media) {
+            self.episode.media = media;
+            self.renderAudio();
+        }, function(reason) {
+            notify.error();
         });
     },
 

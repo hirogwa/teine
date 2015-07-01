@@ -31,6 +31,26 @@ var dialog = {
                 }
             }
         });
+    },
+
+    selector: function(title, template, callbacks) {
+        bootbox.dialog({
+            title: title,
+            message: template,
+            onEscape: callbacks.cancel,
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn-default',
+                    callback: callbacks.cancel
+                },
+                done: {
+                    label: 'Done',
+                    className: 'btn-primary',
+                    callback: callbacks.done
+                }
+            }
+        });
     }
 };
 

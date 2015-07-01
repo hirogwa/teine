@@ -2,6 +2,8 @@ var models = require('../../models/photo.js');
 
 var notify = require('../utils/notification.js').notify;
 
+var dialog = require('../utils/dialog.js').dialog;
+
 var PhotoSelectorView = Backbone.View.extend({
     events: {
         'click a.select-photo': 'selectPhoto',
@@ -66,27 +68,12 @@ var PhotoSelectorView = Backbone.View.extend({
         var self = this;
         return this.loadCollection.then(function(result) {
             return new Promise(function(resolve, reject) {
-                bootbox.dialog({
-                    title: title || 'Select image',
-                    message: self.$el,
-                    onEscape: function() {
+                dialog.selector('Select image', self.$el, {
+                    cancel: function() {
                         resolve();
                     },
-                    buttons: {
-                        cancel: {
-                            label: 'Cancel',
-                            className: 'btn-default',
-                            callback: function() {
-                                resolve();
-                            }
-                        },
-                        done: {
-                            label: 'Done',
-                            className: 'btn-primary',
-                            callback: function() {
-                                resolve(self.selectedPhoto);
-                            }
-                        }
+                    done: function() {
+                        resolve(self.selectedPhoto);
                     }
                 });
             });

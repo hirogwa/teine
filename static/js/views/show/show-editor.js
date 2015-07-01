@@ -79,8 +79,9 @@ var ShowEditorView = Backbone.View.extend({
         var elButtonRemove = this.$('#show-image-button-remove').empty();
 
         if (photo) {
-            elImage.append('<img src="/photo/{}" />'
-                           .replace('{}', photo.get('thumbnail_id')));
+            elImage.append('<a href="/photo/{0}" target="_blank"><img src="/photo/{1}" /></a>'
+                           .replace('{0}', photo.get('photo_id'))
+                           .replace('{1}', photo.get('thumbnail_id')));
             elButtonRemove.append(
                 '<button type="button" class="btn btn-sm btn-warning" ' +
                     'id="remove-show-image">' +
@@ -101,11 +102,13 @@ var ShowEditorView = Backbone.View.extend({
     openPhotoSelector: function(e) {
         var self = this;
         new views.PhotoSelectorView().showDialog().then(function(result) {
-            self.show.image = result;
-            self.show.set({
-                image_id: result ? result.get('photo_id') : undefined
-            });
-            self.renderImage();
+            if (result) {
+                self.show.image = result;
+                self.show.set({
+                    image_id: result ? result.get('photo_id') : undefined
+                });
+                self.renderImage();
+            }
         }, function(reason) {
             notify.error();
         });

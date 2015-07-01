@@ -1,0 +1,29 @@
+<table class="table table-hover">
+  <thead>
+    <th></th>
+    <th>File name</th>
+    <th>Size</th>
+    <th>Date uploaded</th>
+  </thead>
+  <tbody>
+    <% collection.forEach(function(c) { %>
+    <tr class="selectable-audio <%= c.selected ? 'success' : '' %>"
+        data-media-id="<%= c.get('media_id') %>">
+      <td>
+        <% if (c.selected) { %>
+        <i class="fa fa-check"></i>
+        <% } %>
+      </td>
+      <td>
+        <a href="/media/<%= c.get('media_id') %>" target="_blank"><%= c.get('name') %></a>
+      </td>
+      <td>
+        <%= c.formattedSize() %>
+      </td>
+      <td>
+        <%= c.formattedDatetime() %>
+      </td>
+    </tr>
+    <% }); %>
+  </tbody>
+</table>
