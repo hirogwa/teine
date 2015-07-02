@@ -5,6 +5,11 @@ var Media = Backbone.Model.extend({
         return utils.uploadFile('/upload-media', this.get('file'));
     },
 
+    equals: function(another) {
+        return another ?
+            another.get('media_id') === this.get('media_id') : false;
+    },
+
     formattedSize: function() {
         return '{} MB'.replace('{}', (this.get('size') / 1000000).toFixed(2));
     },

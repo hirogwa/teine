@@ -1,5 +1,6 @@
 var models = {
-    MediaCollection: require('../../models/media.js').MediaCollection
+    MediaCollection: require('../../models/media.js').MediaCollection,
+    Episode: require('../../models/episode.js').Episode
 };
 
 var dialog = require('../utils/dialog.js').dialog;
@@ -10,10 +11,13 @@ var AudioSelector = Backbone.View.extend({
     },
 
     initialize: function(args) {
-        var options = args || {};
-        this.additionalAudio = options.additionalAudio;
         _.bindAll(this, 'render', 'showDialog');
         this.template = require('./audio-selector.html');
+
+        var options = args || {};
+        this.originallySelected = options.selectedAudio;
+        this.selectedAudio = options.selectedAudio;
+        this.targetEpisode = options.targetEpisode;
         this.refreshCollection();
     },
 
@@ -27,11 +31,29 @@ var AudioSelector = Backbone.View.extend({
     refreshCollection: function() {
         var self = this;
         this.loadCollection = models.MediaCollection.loadUnused()
-            .then(function(result) {
-                self.collection = result;
-                if (self.additionalAudio) {
-                    self.collection.add(self.additionalAudio);
+            .then(function(audioCollection) {
+                if (self.targetEpisode) {
+                    return models.Episode.load(self.targetEpisode.get('episode_id'))
+                        .then(function(reservedAudio) {
+                            if (!audioCollection.find(function(a) {
+                                return a.equals(reservedAudio);
+                            })) {
+                                audioCollection.add(reservedAudio.media);
+                            }
+                            return Promise.resolve(audioCollection);
+                        });
+                } else {
+                    return Promise.resolve(result);
                 }
+            })
+            .then(function(audioCollection) {
+                if (self.selectedAudio) {
+                    self.selectedAudio = audioCollection.find(function(a) {
+                        return a.equals(self.selectedAudio);
+                    });
+                    self.selectedAudio.selected = true;
+                }
+                self.collection = audioCollection;
                 self.render();
                 return Promise.resolve();
             }, function(reason) {
@@ -71,7 +93,7 @@ var AudioSelector = Backbone.View.extend({
             return new Promise(function(resolve, reject) {
                 dialog.selector('Select audio', self.$el, {
                     cancel: function() {
-                        resolve();
+                        resolve(self.originallySelected);
                     },
                     done: function() {
                         resolve(self.selectedAudio);

@@ -116,6 +116,7 @@ var EpisodeEditorView = Backbone.View.extend({
             .append(this.mediaSelectorView.render().el);
         this.$('#episode-save-action-view')
             .append(this.saveActionView.render().el);
+        this.renderAudio();
 
         this.peopleView.postRender();
 
@@ -152,7 +153,10 @@ var EpisodeEditorView = Backbone.View.extend({
 
     openAudioSelector: function(e) {
         var self = this;
-        return new views.AudioSelector().showDialog().then(function(media) {
+        return new views.AudioSelector({
+            selectedAudio: this.episode.media,
+            targetEpisode: this.episode
+        }).showDialog().then(function(media) {
             self.episode.media = media;
             self.renderAudio();
         }, function(reason) {
