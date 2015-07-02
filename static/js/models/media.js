@@ -47,7 +47,7 @@ Media.existingData = function(input) {
         media_id: input.media_id,
         name: input.name,
         size: input.size,
-        contentType: input.content_type,
+        content_type: input.content_type,
         status: input.status,
         datetime: input.datetime,
         episode: input.episode

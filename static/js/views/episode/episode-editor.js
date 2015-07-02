@@ -145,9 +145,12 @@ var EpisodeEditorView = Backbone.View.extend({
         var audioEl = this.$('#episode-selected-audio');
         audioEl.empty();
         if (this.episode.media) {
-            audioEl.append('<a href="/media/{0}" target="_blank">{1}</a>'
-                           .replace('{0}', this.episode.media.get('media_id'))
-                           .replace('{1}', this.episode.media.get('name')));
+            audioEl.append('<span>{}</span>'.replace('{}', this.episode.media.get('name')));
+            audioEl.append('<audio id="selected-audio"><source type="{0}" src="/media/{1}"/></audio>'
+                           .replace('{0}', this.episode.media.get('content_type'))
+                           .replace('{1}', this.episode.media.get('media_id')));
+
+            $('#selected-audio').mediaelementplayer();
         }
     },
 
