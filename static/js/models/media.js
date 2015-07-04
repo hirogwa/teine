@@ -1,10 +1,6 @@
 var utils = require('../utils.js');
 
 var Media = Backbone.Model.extend({
-    upload: function() {
-        return utils.uploadFile('/upload-media', this.get('file'));
-    },
-
     equals: function(another) {
         return another ?
             another.get('media_id') === this.get('media_id') : false;
@@ -18,6 +14,18 @@ var Media = Backbone.Model.extend({
         return utils.formatDatetime(new Date(this.get('datetime')));
     }
 });
+
+Media.upload = function(file) {
+    return utils.uploadFile('/upload-media', file).then(function(result) {
+        if (result.result === 'success') {
+            return Promise.resolve(Media.existingData(result.media));
+        } else {
+            return Promise.reject();
+        }
+    }, function(reason) {
+        return Promise.reject(reason);
+    });
+};
 
 Media.destroy = function(media_id) {
     return new Promise(function(resolve, reject) {

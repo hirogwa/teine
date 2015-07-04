@@ -1,17 +1,22 @@
 var models = {
+    Media: require('../../models/media.js').Media,
     MediaCollection: require('../../models/media.js').MediaCollection,
     Episode: require('../../models/episode.js').Episode
 };
 
 var dialog = require('../utils/dialog.js').dialog;
 
+var notify = require('../utils/notification.js').notify;
+
 var AudioSelector = Backbone.View.extend({
     events: {
-        'click tr.selectable-audio': 'selectAudio'
+        'click tr.selectable-audio': 'onAudioSelect',
+        'change #audio-selector-file-input': 'changeInputFile'
     },
 
     initialize: function(args) {
-        _.bindAll(this, 'render', 'showDialog');
+        _.bindAll(this, 'render', 'showDialog', 'changeInputFile',
+                  'onAudioSelect', 'selectAudio');
         this.template = require('./audio-selector.html');
 
         var options = args || {};
@@ -59,21 +64,25 @@ var AudioSelector = Backbone.View.extend({
             }, function(reason) {
                 return Promise.reject(reason);
             });
+        return this.loadCollection;
     },
 
-    selectAudio: function(e) {
+    onAudioSelect: function(e) {
+        this.selectAudio($(e.currentTarget).data('media-id'));
+    },
+
+    selectAudio: function(mediaId) {
         var self = this;
-        var selectedId = $(e.currentTarget).data('media-id');
         var selectIt = function() {
             self.selectedAudio = self.collection.find(function(m) {
-                return m.get('media_id') === selectedId;
+                return m.get('media_id') === mediaId;
             });
             self.selectedAudio.selected = true;
         };
 
         if (this.selectedAudio) {
             this.selectedAudio.selected = false;
-            if (this.selectedAudio.get('media_id') === selectedId) {
+            if (this.selectedAudio.get('media_id') === mediaId) {
                 this.selectedAudio = undefined;
             } else {
                 selectIt();
@@ -84,7 +93,27 @@ var AudioSelector = Backbone.View.extend({
         this.render();
     },
 
-    changeInputFile: function() {
+    changeInputFile: function(e) {
+        var self = this;
+        var file = e.currentTarget.files[0];
+        $(e.currentTarget).val('');
+
+        var notifyOptions = {
+            element: 'audio-selector-notify'
+        };
+        var uploadedAudio;
+        var notifyUploading = notify.uploading(file.name, notifyOptions);
+        models.Media.upload(file).then(function(result) {
+            notifyUploading.close();
+            notify.uploaded(file.name, notifyOptions);
+            uploadedAudio = result;
+            return self.refreshCollection();
+        }).then(function(result) {
+            self.selectAudio(uploadedAudio.get('media_id'));
+        }, function(reason) {
+            notify.error(notifyOptions);
+        });
+        return this;
     },
 
     showDialog: function() {

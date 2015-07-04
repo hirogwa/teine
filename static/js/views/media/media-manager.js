@@ -115,27 +115,14 @@ var MediaManagerView = Backbone.View.extend({
     uploadMedia: function(e) {
         var self = this;
         if (this.newFile) {
-            var media = new models.Media({
-                file: this.newFile
-            });
-
-            var notifyUploading = notify.doing(
-                'Uploading {}...'.replace('{}', this.newFile.name));
-            media.upload().then(function(result) {
+            var notifyUploading = notify.uploading(this.newFile.name);
+            models.Media.upload(this.newFile).then(function(result) {
                 notifyUploading.close();
-                if (result.result === 'success') {
-                    notify.done(
-                        '{} uploaded!'.replace('{}', self.newFile.name));
-                    self.newFile = undefined;
-                    self.setUnusedMedia();
-                } else {
-                    notify.error();
-                }
+                notify.uploaded(self.newFile.name);
+                self.newFile = undefined;
+                self.setUnusedMedia();
             }, function(reason) {
-                notifyUploading.close();
                 notify.error();
-                console.log('failed to upload media');
-                console.log(reason);
             });
         }
     }
