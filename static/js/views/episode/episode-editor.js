@@ -11,8 +11,6 @@ var views = {
     LinkListView: require('../link/link-list-view.js').LinkListView,
     EpisodeSaveActionView: require('../episode/episode-save-action-view.js')
         .EpisodeSaveActionView,
-    MediaSelectorView: require('../media/media-selector-view.js')
-        .MediaSelectorView,
     AudioSelector: require('../media/audio-selector.js').AudioSelector
 };
 
@@ -38,34 +36,26 @@ var EpisodeEditorView = Backbone.View.extend({
         _.bindAll(this, 'render',
                   'changeTitle', 'changeSummary', 'changeDescription',
                   'changeScheduleDatetime', 'openAudioSelector', 'renderAudio',
-                  'addPersonality', 'selectMedia', 'deselectMedia',
+                  'addPersonality',
                   'publish', 'saveDraft', 'schedule', 'saveAndRedirect');
         this.template = episodeEditorTemplate;
 
-        var loadEpisodeAsync = function(id) {
-            return models.Episode.load(options.episode_id).then(function(episode) {
-                if (options.copy_mode) {
-                    episode.set({
-                        episode_id: undefined,
-                        title: 'Copy of {}'
-                            .replace('{}', episode.get('title'))
-                    });
-                }
-                return Promise.resolve(episode);
-            }, function(reason) {
-                return Promise.reject();
-            });
+        var loadingEpisode = function() {
+            if (!options.episode_id) {
+                return Promise.resolve(new models.Episode());
+            }
+
+            if (options.copy_mode) {
+                return models.Episode.loadCopy(options.episode_id);
+            } else {
+                return models.Episode.load(options.episode_id);
+            }
         };
-
-        var loadingEpisode = options.episode_id ?
-            loadEpisodeAsync() : Promise.resolve(new models.Episode());
-
-        var loadingMediaCollection = models.MediaCollection.loadUnused();
 
         var self = this;
         Promise.all([
-            loadingEpisode,
-            loadingMediaCollection
+            loadingEpisode(),
+            models.MediaCollection.loadUnused()
         ]).then(function(results) {
             self.episode = results[0];
             self.mediaCollection = results[1];
@@ -91,13 +81,6 @@ var EpisodeEditorView = Backbone.View.extend({
                 });
                 self.mediaCollection.unshift(self.episode.media);
             }
-            self.mediaSelectorView = new views.MediaSelectorView({
-                collection: self.mediaCollection,
-                delegates: {
-                    selectMedia: self.selectMedia,
-                    deselectMedia: self.deselectMedia
-                }
-            });
             self.render();
         }, function(reason) {
             notify.error();
@@ -112,8 +95,6 @@ var EpisodeEditorView = Backbone.View.extend({
         }));
         this.$('#episode-personality-list').append(this.peopleView.render().el);
         this.$('#episode-external-links').append(this.linkListView.render().el);
-        this.$('#media-selector-view')
-            .append(this.mediaSelectorView.render().el);
         this.$('#episode-save-action-view')
             .append(this.saveActionView.render().el);
         this.renderAudio();
@@ -145,10 +126,11 @@ var EpisodeEditorView = Backbone.View.extend({
         var audioEl = this.$('#episode-selected-audio');
         audioEl.empty();
         if (this.episode.media) {
-            audioEl.append('<span>{}</span>'.replace('{}', this.episode.media.get('name')));
-            audioEl.append('<audio id="selected-audio"><source type="{0}" src="/media/{1}"/></audio>'
-                           .replace('{0}', this.episode.media.get('content_type'))
-                           .replace('{1}', this.episode.media.get('media_id')));
+            audioEl.append('<span>{}</span>'
+                           .replace('{}', this.episode.media.get('name')))
+                .append('<audio id="selected-audio"><source type="{0}" src="/media/{1}"/></audio>'
+                        .replace('{0}', this.episode.media.get('content_type'))
+                        .replace('{1}', this.episode.media.get('media_id')));
 
             $('#selected-audio').mediaelementplayer();
         }
@@ -158,7 +140,7 @@ var EpisodeEditorView = Backbone.View.extend({
         var self = this;
         return new views.AudioSelector({
             selectedAudio: this.episode.media,
-            targetEpisode: this.episode
+            targetEpisodeId: this.episode.get('episode_id')
         }).showDialog().then(function(media) {
             self.episode.media = media;
             self.renderAudio();
@@ -198,18 +180,6 @@ var EpisodeEditorView = Backbone.View.extend({
     schedule: function(e, args) {
         var options = args || {};
         this.saveAndRedirect(this.episode.schedule(options.scheduled_date));
-    },
-
-    selectMedia: function(mediaId) {
-        this.episode.set({
-            media_id: mediaId
-        });
-    },
-
-    deselectMedia: function() {
-        this.episode.set({
-            media_id: undefined
-        });
     }
 });
 

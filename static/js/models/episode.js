@@ -81,6 +81,17 @@ Episode.load = function(episodeId) {
     });
 };
 
+Episode.loadCopy = function(episodeId) {
+    return Episode.load(episodeId).then(function(episode) {
+        episode.set({
+            episode_id: undefined,
+            title: 'Copy of {}'.replace('{}', episode.get('title'))
+        });
+        episode.media = undefined;
+        return Promise.resolve(episode);
+    });
+};
+
 Episode.fromData = function(episode) {
     var media = episode.media ? new Media(episode.media) : undefined;
     delete episode.media;

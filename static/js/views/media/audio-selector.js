@@ -22,7 +22,7 @@ var AudioSelector = Backbone.View.extend({
         var options = args || {};
         this.originallySelected = options.selectedAudio;
         this.selectedAudio = options.selectedAudio;
-        this.targetEpisode = options.targetEpisode;
+        this.targetEpisodeId = options.targetEpisodeId;
         this.refreshCollection();
     },
 
@@ -37,8 +37,8 @@ var AudioSelector = Backbone.View.extend({
         var self = this;
         this.loadCollection = models.MediaCollection.loadUnused()
             .then(function(audioCollection) {
-                if (self.targetEpisode) {
-                    return models.Episode.load(self.targetEpisode.get('episode_id'))
+                if (self.targetEpisodeId) {
+                    return models.Episode.load(self.targetEpisodeId)
                         .then(function(reservedAudio) {
                             if (!audioCollection.find(function(a) {
                                 return a.equals(reservedAudio);
@@ -48,7 +48,7 @@ var AudioSelector = Backbone.View.extend({
                             return Promise.resolve(audioCollection);
                         });
                 } else {
-                    return Promise.resolve(result);
+                    return Promise.resolve(audioCollection);
                 }
             })
             .then(function(audioCollection) {
