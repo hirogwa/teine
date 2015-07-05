@@ -101,14 +101,14 @@ var ShowEditorView = Backbone.View.extend({
 
     openPhotoSelector: function(e) {
         var self = this;
-        new views.PhotoSelectorView().showDialog().then(function(result) {
-            if (result) {
-                self.show.image = result;
-                self.show.set({
-                    image_id: result ? result.get('photo_id') : undefined
-                });
-                self.renderImage();
-            }
+        new views.PhotoSelectorView({
+            selectedPhoto: this.show.image
+        }).showDialog().then(function(result) {
+            self.show.image = result;
+            self.show.set({
+                image_id: result ? result.get('photo_id') : undefined
+            });
+            self.renderImage();
         }, function(reason) {
             notify.error();
         });

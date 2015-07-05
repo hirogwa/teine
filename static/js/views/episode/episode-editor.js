@@ -143,6 +143,9 @@ var EpisodeEditorView = Backbone.View.extend({
             targetEpisodeId: this.episode.get('episode_id')
         }).showDialog().then(function(media) {
             self.episode.media = media;
+            self.episode.set({
+                media_id: media ? media.get('media_id') : undefined
+            });
             self.renderAudio();
         }, function(reason) {
             notify.error();

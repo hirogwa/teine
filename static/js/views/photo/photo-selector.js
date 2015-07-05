@@ -6,37 +6,62 @@ var dialog = require('../utils/dialog.js').dialog;
 
 var PhotoSelectorView = Backbone.View.extend({
     events: {
-        'click a.select-photo': 'selectPhoto',
+        'click a.select-photo': 'onSelectPhoto',
         'change #photo-selector-file-input': 'changeInputFile'
     },
 
-    initialize: function() {
-        _.bindAll(this, 'selectPhoto', 'changeInputFile');
+    initialize: function(args) {
+        var options = args || {};
+        this.selectedPhoto = options.selectedPhoto;
+
+        _.bindAll(this, 'onSelectPhoto', 'changeInputFile');
         this.template = require('./photo-selector.html');
         this.refreshCollection();
     },
 
-    selectPhoto: function(e) {
-        this.selectedPhoto = this.collection.forEach(function(p) {
-            p.selected = false;
-        }).find(function(p) {
-            return p.get('photo_id') === $(e.currentTarget).data('photo-id');
-        });
+    onSelectPhoto: function(e) {
+        this.selectPhoto($(e.currentTarget).data('photo-id'));
+    },
+
+    selectPhoto: function(photoId) {
+        var self = this;
+        var selectIt = function() {
+            self.selectedPhoto = self.collection.find(function(p) {
+                return p.get('photo_id') === photoId;
+            });
+            self.selectedPhoto.selected = true;
+        };
+
         if (this.selectedPhoto) {
-            this.selectedPhoto.selected = true;
+            this.selectedPhoto.selected = false;
+            if (this.selectedPhoto.get('photo_id') === photoId) {
+                this.selectedPhoto = undefined;
+            } else {
+                selectIt();
+            }
+        } else {
+            selectIt();
         }
         this.render();
     },
 
     refreshCollection: function() {
         var self = this;
-        this.loadCollection = models.PhotoCollection.load().then(function(result) {
-            self.collection = result;
+        this.loadCollection = models.PhotoCollection.load().then(function(photoCollection) {
+            if (self.selectedPhoto) {
+                self.selectedPhoto = photoCollection.find(function(p) {
+                    return p.equals(self.selectedPhoto);
+                });
+                self.selectedPhoto.selected = true;
+            }
+            self.collection = photoCollection;
             self.render();
             return Promise.resolve();
         }, function(reason) {
             return Promise.reject(reason);
         });
+
+        return this.loadCollection;
     },
 
     changeInputFile: function(e) {
@@ -48,9 +73,10 @@ var PhotoSelectorView = Backbone.View.extend({
             element: 'photo-selector-notify'
         };
         var notifyUploading = notify.uploading(file.name, notifyOptions);
-        models.Photo.newFile(file).upload().then(function(result) {
+        models.Photo.upload(file).then(function(result) {
             notifyUploading.close();
             notify.uploaded(file.name, notifyOptions);
+            self.selectedPhoto = result;
             self.refreshCollection();
         }, function(reason) {
             notify.error(notifyOptions);

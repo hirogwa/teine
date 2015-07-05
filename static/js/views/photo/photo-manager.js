@@ -50,6 +50,7 @@ var PhotoManagerView = Backbone.View.extend({
             var notifyDeleting = notify.deleting(filename);
             models.Photo.destroy(photo_id).then(function(result) {
                 notifyDeleting.close();
+                notify.deleted(filename);
                 self.refreshListView();
             }, function(reason) {
                 notify.error();
@@ -62,7 +63,7 @@ var PhotoManagerView = Backbone.View.extend({
         var file = e.currentTarget.files[0];
         $(e.currentTarget).val('');
         var notifyUploading = notify.uploading(file.name);
-        models.Photo.newFile(file).upload().then(function(result) {
+        models.Photo.upload(file).then(function(result) {
             notifyUploading.close();
             notify.uploaded(file.name);
             self.refreshListView();

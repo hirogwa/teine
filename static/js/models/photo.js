@@ -3,17 +3,9 @@ var utils = require('../utils.js');
 var Photo = Backbone.Model.extend({
     url: '/photo',
 
-    upload: function() {
-        var file = this.file;
-        return utils.uploadFile('/upload-photo', file).then(function(result) {
-            if (result.result === 'success') {
-                return Promise.resolve(result.photo);
-            } else {
-                return Promise.reject();
-            }
-        }, function(reason) {
-            return Promise.reject();
-        });
+    equals: function(another) {
+        return another ?
+            another.get('photo_id') === this.get('photo_id') : false;
     },
 
     formattedDatetime: function() {
@@ -21,10 +13,16 @@ var Photo = Backbone.Model.extend({
     }
 });
 
-Photo.newFile = function(file) {
-    var p = new Photo();
-    p.file = file;
-    return p;
+Photo.upload = function(file) {
+    return utils.uploadFile('/upload-photo', file).then(function(result) {
+        if (result.result === 'success') {
+            return Promise.resolve(new Photo(result.photo));
+        } else {
+            return Promise.reject();
+        }
+    }, function(reason) {
+        return Promise.reject();
+    });
 };
 
 Photo.destroy = function(photo_id) {
