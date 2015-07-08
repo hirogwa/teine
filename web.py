@@ -116,8 +116,9 @@ def profile():
 def show():
     if 'GET' == request.method:
         user = flask_login.current_user
+        show_id = request.args['show_id']
         return json_response(
-            models.Show.get_by_id(user.get_show_id())
+            models.Show.get_by_id(show_id)
             .load_hosts().load_image().export())
 
     if 'POST' == request.method:

@@ -27,24 +27,21 @@ var ShowEditorView = Backbone.View.extend({
         this.template = showEditorTemplate;
 
         var self = this;
+        this.show = new models.Show();
         new Promise(function(resolve, reject) {
             if (options.show_id) {
-                $.ajax({
-                    url: '/show',
-                    data: {
+                self.show.fetch({
+                    data: $.param({
                         show_id: options.show_id
+                    }),
+                    success: function(model, resp, options) {
+                        resolve(model);
                     },
-                    dataType: 'json',
-                    success: function(data) {
-                        self.show = models.Show.existingData(data);
-                        resolve(data);
+                    error: function(model, resp, options) {
+                        reject();
                     },
-                    error: function(data) {
-                        reject(data);
-                    }
                 });
             } else {
-                self.show = new models.Show();
                 resolve();
             }
         }).then(function() {

@@ -8,35 +8,33 @@ var Show = Backbone.Model.extend({
 
     defaults: {
         show_hosts: new models.People()
+    },
+
+    parse: function(input) {
+        var show_hosts = new models.People();
+
+        if (input.show_hosts) {
+            input.show_hosts.forEach(function(p) {
+                show_hosts.addPersonalityFromTwitter(p.twitter);
+            });
+        }
+
+        if (input.image) {
+            this.image = new models.Photo(input.image);
+        }
+
+        return {
+            show_id: input.show_id,
+            title: input.title,
+            author: input.author,
+            tagline: input.tagline,
+            description: input.description,
+            image_id: input.image_id,
+            language: input.language,
+            show_hosts: show_hosts
+        };
     }
 });
-
-Show.existingData = function(input) {
-    var s = new Show();
-    var show_hosts = new models.People();
-
-    if (input.show_hosts) {
-        input.show_hosts.forEach(function(p) {
-            show_hosts.addPersonalityFromTwitter(p.twitter);
-        });
-    }
-
-    if (input.image) {
-        s.image = new models.Photo(input.image);
-    }
-
-    s.set({
-        show_id: input.show_id,
-        title: input.title,
-        author: input.author,
-        tagline: input.tagline,
-        description: input.description,
-        image_id: input.image_id,
-        language: input.language,
-        show_hosts: show_hosts
-    });
-    return s;
-};
 
 module.exports = {
     Show: Show
