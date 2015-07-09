@@ -168,32 +168,25 @@ def upload_show_image():
 @app.route('/episode/new', methods=['GET'])
 @flask_login.login_required
 def page_create_episode():
-    return page_episode()
+    return page_episode(show_id=flask_login.current_user.get_show_id())
 
 
 @app.route('/episode/copy/<episode_id>', methods=['GET'])
 def page_copy_episode(episode_id):
-    return page_episode(episode_id, True)
+    return page_episode(episode_id=episode_id, copy_mode=True)
 
 
 @app.route('/episode/<episode_id>', methods=['GET', 'DELETE'])
 @flask_login.login_required
 def page_load_episode(episode_id):
     if 'GET' == request.method:
-        return page_episode(episode_id)
-    if 'DELETE' == request.method:
-        ep = models.Episode.get_by_id(episode_id)
-        if ep.media_id:
-            ep.media.dissociate_episode().save()
-        ep.delete()
-        return json_response({
-            'result': 'success'
-        })
+        return page_episode(episode_id=episode_id)
 
 
-def page_episode(episode_id=None, copy_mode=False):
+def page_episode(show_id=None, episode_id=None, copy_mode=False):
     kwargs = dashboard_template_args(sidebar_episodes='active')
     if episode_id:
+        kwargs['show_id'] = show_id
         kwargs['episode_id'] = episode_id
         kwargs['copy_mode'] = 'true' if copy_mode else 'false'
     return render_template('dashboard-episode.html', **kwargs)
@@ -222,15 +215,15 @@ def get_personality(g):
     user = flask_login.current_user
     g.pop('show_id', None)
     return models.Personality.find_by_twitter(
-        g.get('twitter').get('screen_name'), user.get_show_id(), True, **g)
+        show_id=user.get_show_id(), create_when_not_found=True,
+        **g.get('twitter'))
 
 
-@app.route('/episode', methods=['GET', 'POST'])
+@app.route('/episode', methods=['GET', 'POST', 'DELETE'])
 @flask_login.login_required
 def episode():
     if 'POST' == request.method:
         in_data = request.get_json()
-        user = flask_login.current_user
 
         in_data['guest_ids'] = list(map(
             lambda x: get_personality(x).personality_id,
@@ -246,8 +239,7 @@ def episode():
                 original_model = models.Media.get_by_id(original.media_id)
                 original_model.dissociate_episode().save()
         else:
-            ep = models.Episode.create_new(
-                show_id=user.get_show_id(), **in_data)
+            ep = models.Episode.create_new(**in_data)
 
         if ep.media_id:
             model = models.Media.get_by_id(ep.media_id)
@@ -267,13 +259,23 @@ def episode():
             'episode': ep.export()
         })
 
+    if 'DELETE' == request.method:
+        episode_id = request.form.get('episode_id')
+        ep = models.Episode.get_by_id(episode_id)
+        if ep.media_id:
+            ep.media.dissociate_episode().save()
+        ep.delete()
+        return json_response({
+            'result': 'success'
+        })
+
 
 @app.route('/episodes', methods=['GET'])
 @flask_login.login_required
 def episodes():
     if 'GET' == request.method:
-        return json_response(list(map(
-            lambda x: x.export(), models.Episode.get_list())))
+        return json_response(map(
+            lambda x: {'episode': x.export()}, models.Episode.get_list()))
 
 
 @app.route('/upload-media', methods=['POST'])

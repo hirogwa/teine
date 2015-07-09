@@ -39,13 +39,12 @@ var EpisodeListView = Backbone.View.extend({
 
     refreshCollection: function() {
         var self = this;
-        $.ajax({
-            url: '/episodes',
-            success: function(data) {
-                self.collection = models.Episodes.existingList(data);
+        new models.Episodes().fetch({
+            success: function(collection, resp, options) {
+                self.collection = collection;
                 self.render();
             },
-            error: function(data) {
+            error: function(collection, resp, options) {
                 notify.error();
             }
         });
@@ -57,22 +56,27 @@ var EpisodeListView = Backbone.View.extend({
         var episodeId = $(e.currentTarget).data('episode-id');
         var episodeTitle = $(e.currentTarget).data('episode-title');
 
+        var episode = this.collection.find(function(ep) {
+            return ep.get('episode_id') === episodeId;
+        });
+
         dialog.confirmDelete(episodeTitle, function() {
             var notifyDeleting = notify.doing(
                 'Deleting "{}"...'.replace('{}', episodeTitle));
 
-            models.Episode.destroy(episodeId).then(function(result) {
-                notifyDeleting.close();
-                if (result.result === 'success') {
-                    notify.done(
-                        '"{}" deleted!'.replace('{}', episodeTitle));
+            episode.destroy({
+                data: $.param({
+                    episode_id: episode.get('episode_id')
+                }),
+                success: function(model, resp, options) {
+                    notifyDeleting.close();
+                    notify.deleted(episodeTitle);
                     self.refreshCollection();
-                } else {
+                },
+                error: function(model, resp, options) {
+                    notifyDeleting.close();
                     notify.error();
                 }
-            }, function(reason) {
-                notifyDeleting.close();
-                notify.error();
             });
         });
     }

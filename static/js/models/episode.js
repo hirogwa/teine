@@ -56,26 +56,57 @@ var Episode = Backbone.Model.extend({
             schedule_date: scheduled_date
         });
         return this.savePromise();
+    },
+
+    parse: function(data) {
+        var episode = data.episode;
+
+        var media = episode.media ? new Media(episode.media) : undefined;
+        delete episode.media;
+
+        var guests = new People();
+        if (episode.guests) {
+            episode.guests.forEach(function(g) {
+                guests.add(new Personality(g));
+            });
+            episode.guests = guests;
+        }
+
+        var links = new Links();
+        if (episode.links) {
+            episode.links.forEach(function(l) {
+                links.add(new Link(l));
+            });
+            episode.links = links;
+        }
+
+        this.media = media;
+
+        return {
+            id: episode.episode_id,
+            show_id: episode.show_id,
+            episode_id: episode.episode_id,
+            title: episode.title,
+            summary: episode.summary,
+            description: episode.description,
+            guests: episode.guests,
+            links: episode.links,
+            status: episode.status,
+        };
     }
 });
 
 Episode.load = function(episodeId) {
     return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/episode',
-            data: {
+        new Episode().fetch({
+            data: $.param({
                 episode_id: episodeId
+            }),
+            success: function(model, resp, options) {
+                resolve(model);
             },
-            dataType: 'json',
-            success: function(data) {
-                if (data.result === 'success') {
-                    resolve(Episode.fromData(data.episode));
-                } else {
-                    reject(data);
-                }
-            },
-            error: function(data) {
-                reject(data);
+            error: function(model, resp, options) {
+                reject();
             }
         });
     });
@@ -84,38 +115,13 @@ Episode.load = function(episodeId) {
 Episode.loadCopy = function(episodeId) {
     return Episode.load(episodeId).then(function(episode) {
         episode.set({
+            id: undefined,
             episode_id: undefined,
             title: 'Copy of {}'.replace('{}', episode.get('title'))
         });
         episode.media = undefined;
         return Promise.resolve(episode);
     });
-};
-
-Episode.fromData = function(episode) {
-    var media = episode.media ? new Media(episode.media) : undefined;
-    delete episode.media;
-
-    var guests = new People();
-    if (episode.guests) {
-        episode.guests.forEach(function(g) {
-            guests.add(new Personality(g));
-        });
-        episode.guests = guests;
-    }
-
-    var links = new Links();
-    if (episode.links) {
-        episode.links.forEach(function(l) {
-            links.add(new Link(l));
-        });
-        episode.links = links;
-    }
-
-    var ep = new Episode(episode);
-    ep.media = media;
-
-    return ep;
 };
 
 Episode.destroy = function(episodeId) {
@@ -134,16 +140,9 @@ Episode.destroy = function(episodeId) {
 };
 
 var Episodes = Backbone.Collection.extend({
-    model: Episode
+    model: Episode,
+    url: '/episodes',
 });
-
-Episodes.existingList = function(input) {
-    var episodes = new Episodes();
-    input.forEach(function(e) {
-        episodes.add(Episode.fromData(e));
-    });
-    return episodes;
-};
 
 module.exports = {
     Episode: Episode,

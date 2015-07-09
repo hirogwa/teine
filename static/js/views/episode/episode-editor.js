@@ -42,7 +42,9 @@ var EpisodeEditorView = Backbone.View.extend({
 
         var loadingEpisode = function() {
             if (!options.episode_id) {
-                return Promise.resolve(new models.Episode());
+                return Promise.resolve(new models.Episode({
+                    show_id: options.show_id
+                }));
             }
 
             if (options.copy_mode) {

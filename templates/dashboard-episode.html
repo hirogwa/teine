@@ -15,7 +15,9 @@
             copy_mode: {{ copy_mode }}
         });
         {% else %}
-        new teine.EpisodeEditorView();
+        new teine.EpisodeEditorView({
+            show_id: "{{ show_id }}"
+        });
         {% endif %}
     });
 </script>
