@@ -69,16 +69,16 @@ var Episode = Backbone.Model.extend({
             episode.guests.forEach(function(g) {
                 guests.add(new Personality(g));
             });
-            episode.guests = guests;
         }
+        episode.guests = guests;
 
         var links = new Links();
         if (episode.links) {
             episode.links.forEach(function(l) {
                 links.add(new Link(l));
             });
-            episode.links = links;
         }
+        episode.links = links;
 
         this.media = media;
 

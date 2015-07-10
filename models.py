@@ -71,7 +71,7 @@ class Show():
 class Episode():
     table_name = "teine-Episode"
 
-    def __init__(self, episode_id, show_id,
+    def __init__(self, show_id, episode_id=str(uuid.uuid4()),
                  title='', summary='', description='', media_id=None,
                  guest_ids=[], links=[], status=None, **kwargs):
         self.episode_id = episode_id
@@ -85,10 +85,6 @@ class Episode():
         self._guests = []
         self.links = links
         self.status = status
-
-    @classmethod
-    def create_new(cls, show_id, **kwargs):
-        return Episode(str(uuid.uuid4()), show_id, **kwargs)
 
     @classmethod
     def get_by_id(cls, episode_id):

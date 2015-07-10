@@ -219,31 +219,36 @@ def get_personality(g):
         **g.get('twitter'))
 
 
-@app.route('/episode', methods=['GET', 'POST', 'DELETE'])
+@app.route('/episode', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @flask_login.login_required
 def episode():
-    if 'POST' == request.method:
+    def episode_to_update():
         in_data = request.get_json()
-
         in_data['guest_ids'] = list(map(
             lambda x: get_personality(x).personality_id,
             in_data.get('guests')))
         in_data['links'] = map(
             lambda x: models.Link(**x), in_data.get('links'))
-
-        ep_id = in_data.get('episode_id')
-        if ep_id:
-            ep = models.Episode(**in_data)
-            original = models.Episode.get_by_id(ep_id)
-            if original.media_id != ep.media_id and original.media_id:
-                original_model = models.Media.get_by_id(original.media_id)
-                original_model.dissociate_episode().save()
-        else:
-            ep = models.Episode.create_new(**in_data)
-
+        ep = models.Episode(**in_data)
         if ep.media_id:
             model = models.Media.get_by_id(ep.media_id)
             model.associate_episode(ep.episode_id).save()
+        return ep
+
+    if 'POST' == request.method:
+        ep = episode_to_update().save()
+        return json_response({
+            'result': 'success',
+            'episode': ep.export()
+        })
+
+    if 'PUT' == request.method:
+        ep = episode_to_update()
+        original = models.Episode.get_by_id(ep.episode_id)
+
+        if original.media_id != ep.media_id and original.media_id:
+            original_media = models.Media.get_by_id(original.media_id)
+            original_media.dissociate_episode().save()
 
         ep.save()
 
