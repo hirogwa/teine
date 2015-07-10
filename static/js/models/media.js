@@ -1,6 +1,8 @@
 var utils = require('../utils.js');
 
 var Media = Backbone.Model.extend({
+    url: '/media',
+
     equals: function(another) {
         return another ?
             another.get('media_id') === this.get('media_id') : false;
@@ -12,13 +14,27 @@ var Media = Backbone.Model.extend({
 
     formattedDatetime: function() {
         return utils.formatDatetime(new Date(this.get('datetime')));
+    },
+
+    parse: function(input) {
+        return {
+            media_id: input.media_id,
+            name: input.name,
+            size: input.size,
+            content_type: input.content_type,
+            status: input.status,
+            datetime: input.datetime,
+            episode: input.episode
+        };
     }
 });
 
 Media.upload = function(file) {
-    return utils.uploadFile('/upload-media', file).then(function(result) {
+    var media = new Media();
+    return utils.uploadFile(media.url, file).then(function(result) {
         if (result.result === 'success') {
-            return Promise.resolve(Media.existingData(result.media));
+            media.parse(result.media);
+            return Promise.resolve(media);
         } else {
             return Promise.reject();
         }
@@ -29,41 +45,24 @@ Media.upload = function(file) {
 
 Media.destroy = function(media_id) {
     return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/delete-media',
-            data: {
+        new Media({id: media_id}).destroy({
+            data: $.param({
                 media_id: media_id
+            }),
+            success: function(model, resp, options) {
+                resolve();
             },
-            dataType: 'json',
-            method: 'POST',
-            success: function(data) {
-                if (data.result === 'success') {
-                    resolve();
-                } else {
-                    reject();
-                }
-            },
-            error: function(data) {
-                reject(data);
+            error: function(model, resp, options) {
+                reject();
             }
         });
     });
 };
 
-Media.existingData = function(input) {
-    return new Media({
-        media_id: input.media_id,
-        name: input.name,
-        size: input.size,
-        content_type: input.content_type,
-        status: input.status,
-        datetime: input.datetime,
-        episode: input.episode
-    });
-};
-
 var MediaCollection = Backbone.Collection.extend({
     model: Media,
+
+    url: '/media-list',
 
     selectedMedia: function() {
         return this.find(function(m) {
@@ -72,27 +71,17 @@ var MediaCollection = Backbone.Collection.extend({
     }
 });
 
-MediaCollection.existingCollection = function(input) {
-    var c = new MediaCollection();
-    input.forEach(function(m) {
-        c.add(Media.existingData(m));
-    });
-    return c;
-};
-
 MediaCollection.loadUsed = function() {
     return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/media-list',
-            method: 'GET',
-            data: {
+        new MediaCollection().fetch({
+            data: $.param({
                 filter: 'used'
+            }),
+            success: function(collection, resp, options) {
+                resolve(collection);
             },
-            success: function(data) {
-                resolve(MediaCollection.existingCollection(data));
-            },
-            error: function(data) {
-                reject(data);
+            error: function(collection, resp, options) {
+                reject();
             }
         });
     });
@@ -100,17 +89,15 @@ MediaCollection.loadUsed = function() {
 
 MediaCollection.loadUnused = function() {
     return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/media-list',
-            method: 'GET',
-            data: {
+        new MediaCollection().fetch({
+            data: $.param({
                 filter: 'unused'
+            }),
+            success: function(collection, resp, options) {
+                resolve(collection);
             },
-            success: function(data) {
-                resolve(MediaCollection.existingCollection(data));
-            },
-            error: function(data) {
-                reject(data);
+            error: function(collection, resp, options) {
+                reject();
             }
         });
     });
