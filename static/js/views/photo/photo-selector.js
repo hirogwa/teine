@@ -16,6 +16,7 @@ var PhotoSelectorView = Backbone.View.extend({
 
         _.bindAll(this, 'onSelectPhoto', 'changeInputFile');
         this.template = require('./photo-selector.html');
+        this.originallySelected = options.selectedPhoto;
         this.refreshCollection();
     },
 
@@ -96,7 +97,7 @@ var PhotoSelectorView = Backbone.View.extend({
             return new Promise(function(resolve, reject) {
                 dialog.selector('Select image', self.$el, {
                     cancel: function() {
-                        resolve();
+                        resolve(self.originallySelected);
                     },
                     done: function() {
                         resolve(self.selectedPhoto);

@@ -27,46 +27,38 @@ Photo.upload = function(file) {
 
 Photo.destroy = function(photo_id) {
     return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/photo?{}'.replace('{}', $.param({
+        new Photo({id: photo_id}).destroy({
+            data: $.param({
                 photo_id: photo_id
-            })),
-            method: 'DELETE',
-            success: function(data) {
-                if (data.result === 'success') {
-                    resolve();
-                } else {
-                    reject(data);
-                }
+            }),
+            success: function(model, resp, options) {
+                resolve();
             },
-            error: function(data) {
-                reject(data);
+            error: function(model, resp, options) {
+                reject();
             }
         });
     });
 };
 
 var PhotoCollection = Backbone.Collection.extend({
-    model: Photo
+    model: Photo,
+
+    url: '/photo-list',
+
+    parse: function(data) {
+        return data.photos;
+    }
 });
 
 PhotoCollection.load = function() {
     return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/load-photos',
-            success: function(data) {
-                if (data.result === 'success') {
-                    var c = new PhotoCollection();
-                    c.reset(data.photos.map(function(p) {
-                        return new Photo(p);
-                    }));
-                    resolve(c);
-                } else {
-                    reject();
-                }
+        new PhotoCollection().fetch({
+            success: function(collection, resp, options) {
+                resolve(collection);
             },
-            error: function(data) {
-                reject(data);
+            error: function(collection, resp, options) {
+                reject();
             }
         });
     });

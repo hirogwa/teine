@@ -374,10 +374,21 @@ def retrieve_media_list():
 @app.route('/photo', methods=['DELETE'])
 @flask_login.login_required
 def photo():
-    photo_id = request.args.get('photo_id')
+    photo_id = request.form.get('photo_id')
     models.Photo.get_by_id(photo_id).delete()
     return json_response({
         'result': 'success'
+    })
+
+
+@app.route('/photo-list', methods=['GET'])
+@flask_login.login_required
+def photo_list():
+    user_id = flask_login.current_user.user_id
+    photos = models.Photo.get_list(user_id)
+    return json_response({
+        'result': 'success',
+        'photos': map(lambda x: x.export(), photos)
     })
 
 
@@ -394,17 +405,6 @@ def download_photo(photo_id):
     return redirect(
         urllib.parse.urljoin(
             settings.S3_HOST, '%s/%s' % (settings.S3_BUCKET_NAME, photo_id)))
-
-
-@app.route('/load-photos', methods=['GET'])
-@flask_login.login_required
-def load_photos():
-    user_id = flask_login.current_user.user_id
-    photos = models.Photo.get_list(user_id)
-    return json_response({
-        'result': 'success',
-        'photos': map(lambda x: x.export(), photos)
-    })
 
 
 @app.route('/upload-photo', methods=['POST'])
