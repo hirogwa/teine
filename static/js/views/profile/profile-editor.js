@@ -19,13 +19,17 @@ var ProfileEditorView = Backbone.View.extend({
 
         var self = this;
         if (args.user_id) {
-            models.User.load(args.user_id).then(function(result) {
-                self.user = result;
-                self.render();
-            }, function(reason) {
+            new models.User().fetch({
+                success: function(model, resp, options) {
+                    self.user = model;
+                    self.render();
+                },
+                error: function(model, resp, options) {
+                    notify.error();
+                }
             });
         } else {
-            self.user = new models.User();
+            this.user = new models.User();
             this.render();
         }
     },
