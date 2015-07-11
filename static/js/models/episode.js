@@ -7,6 +7,8 @@ var Media = require('./media.js').Media;
 var Episode = Backbone.Model.extend({
     url: '/episode',
 
+    idAttribute: 'episode_id',
+
     defaults: {
         links: new Links(),
         guests: new People()
@@ -83,7 +85,6 @@ var Episode = Backbone.Model.extend({
         this.media = media;
 
         return {
-            id: episode.episode_id,
             show_id: episode.show_id,
             episode_id: episode.episode_id,
             title: episode.title,
@@ -115,27 +116,11 @@ Episode.load = function(episodeId) {
 Episode.loadCopy = function(episodeId) {
     return Episode.load(episodeId).then(function(episode) {
         episode.set({
-            id: undefined,
             episode_id: undefined,
             title: 'Copy of {}'.replace('{}', episode.get('title'))
         });
         episode.media = undefined;
         return Promise.resolve(episode);
-    });
-};
-
-Episode.destroy = function(episodeId) {
-    return new Promise(function(resolve, reject) {
-        $.ajax({
-            url: '/episode/' + episodeId,
-            method: 'DELETE',
-            success: function(data) {
-                resolve(data);
-            },
-            error: function(data) {
-                reject(data);
-            }
-        });
     });
 };
 
