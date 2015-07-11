@@ -3,6 +3,8 @@ var utils = require('../utils.js');
 var Media = Backbone.Model.extend({
     url: '/media',
 
+    idAttribute: 'media_id',
+
     equals: function(another) {
         return another ?
             another.get('media_id') === this.get('media_id') : false;
@@ -45,7 +47,7 @@ Media.upload = function(file) {
 
 Media.destroy = function(media_id) {
     return new Promise(function(resolve, reject) {
-        new Media({id: media_id}).destroy({
+        new Media({media_id: media_id}).destroy({
             data: $.param({
                 media_id: media_id
             }),

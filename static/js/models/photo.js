@@ -3,6 +3,8 @@ var utils = require('../utils.js');
 var Photo = Backbone.Model.extend({
     url: '/photo',
 
+    idAttribute: 'photo_id',
+
     equals: function(another) {
         return another ?
             another.get('photo_id') === this.get('photo_id') : false;
@@ -27,7 +29,7 @@ Photo.upload = function(file) {
 
 Photo.destroy = function(photo_id) {
     return new Promise(function(resolve, reject) {
-        new Photo({id: photo_id}).destroy({
+        new Photo({photo_id: photo_id}).destroy({
             data: $.param({
                 photo_id: photo_id
             }),
