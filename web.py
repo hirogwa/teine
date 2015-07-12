@@ -111,17 +111,16 @@ def profile():
             raise ValueError
 
 
-@app.route('/show', methods=['GET', 'POST'])
+@app.route('/show', methods=['GET', 'POST', 'PUT'])
 @flask_login.login_required
 def show():
     if 'GET' == request.method:
-        user = flask_login.current_user
         show_id = request.args['show_id']
         return json_response(
             models.Show.get_by_id(show_id)
             .load_hosts().load_image().export())
 
-    if 'POST' == request.method:
+    if request.method in ('POST', 'PUT'):
         user = flask_login.current_user
         in_data = request.get_json()
 
@@ -129,11 +128,7 @@ def show():
             lambda x: get_personality(x).personality_id,
             in_data.get('show_hosts')))
 
-        if in_data['show_id']:
-            show = models.Show(owner_user_id=user.user_id, **in_data)
-        else:
-            show = models.Show.create_new(
-                owner_user_id=user.user_id, **in_data)
+        show = models.Show(user.user_id, **in_data)
         show.save()
         return json_response({
             'result': 'success',

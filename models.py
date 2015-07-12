@@ -9,7 +9,8 @@ import s3_store
 class Show():
     table_name = "teine-Show"
 
-    def __init__(self, show_id, owner_user_id, title='', author='', tagline='',
+    def __init__(self, owner_user_id, show_id=str(uuid.uuid4()),
+                 title='', author='', tagline='',
                  description='', show_host_ids=[], image_id='',
                  language='en-us', **kwargs):
         self.show_id = show_id
@@ -23,10 +24,6 @@ class Show():
         self.image_id = image_id
         self.image = None
         self.language = language
-
-    @classmethod
-    def create_new(cls, user_id, **kwargs):
-        return Show(str(uuid.uuid4()), user_id, **kwargs)
 
     @classmethod
     def get_by_id(cls, show_id):

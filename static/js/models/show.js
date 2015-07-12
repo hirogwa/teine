@@ -6,6 +6,8 @@ var models = {
 var Show = Backbone.Model.extend({
     url: '/show',
 
+    idAttribute: 'show_id',
+
     defaults: {
         show_hosts: new models.People()
     },
