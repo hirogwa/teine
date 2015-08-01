@@ -518,11 +518,6 @@ def ping():
     return 'sup'
 
 
-@app.route('/explorer', methods=['GET'])
-def explorer():
-    return render_template('explorer.html')
-
-
 def temp_filepath(filename):
     if not os.path.exists(settings.TEMP_FILES_DIR):
         os.makedirs(settings.TEMP_FILES_DIR)
