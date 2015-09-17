@@ -12,7 +12,7 @@ import urllib.request
 import uuid
 
 import externals
-import models_neo as models
+import models
 import settings
 import s3_store
 
