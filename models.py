@@ -2,15 +2,14 @@ import datetime
 import uuid
 
 import dynamo
-import settings
 import s3_store
+import settings
 
 
 class Show():
     table_name = "teine-Show"
 
-    def __init__(self, owner_user_id, show_id=str(uuid.uuid4()),
-                 title='', author='', tagline='',
+    def __init__(self, show_id, owner_user_id, title='', author='', tagline='',
                  description='', show_host_ids=[], image_id='',
                  language='en-us', **kwargs):
         self.show_id = show_id
@@ -26,26 +25,39 @@ class Show():
         self.language = language
 
     @classmethod
-    def get_by_id(cls, show_id):
+    def load(cls, show_id):
+        """
+        Sets up a new in-memory 'Show' by accessing database for
+        an existing show_id
+        """
         rs = dynamo.query(cls.table_name, show_id__eq=show_id)
         for val in rs:
-            return Show(**val)
-
+            return cls(**val)
         return None
 
-    def load_hosts(self):
-        if not self.show_hosts:
-            self.show_hosts = map(
-                lambda x: Personality.get_by_id(x), self.show_host_ids)
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Constructs an (unsaved) 'Show' instance.
+        To persist the data, you need to call 'Show.save' on the instance.
+        """
+        return cls(show_id=uuid.uuid4(), **kwargs)
+
+    def save(self):
+        """
+        Saves this 'Show' data to database
+        """
+        dynamo.update(self.table_name, self.export())
         return self
 
-    def load_image(self):
-        if self.image_id:
-            self.image = Photo.get_by_id(self.image_id)
-        return self
+    def export(self, expand=[]):
+        """
+        Returns dictionary representing this 'Show' instance
 
-    def export(self):
-        return {
+        To expand internal substructures, pass the attribute names
+        in the expand parameter
+        """
+        ret = {
             'show_id': self.show_id,
             'owner_user_id': self.owner_user_id,
             'title': self.title,
@@ -53,24 +65,38 @@ class Show():
             'tagline': self.tagline,
             'description': self.description,
             'show_host_ids': self.show_host_ids,
-            'show_hosts': list(map(
-                lambda x: x.export(), self.show_hosts or [])),
             'image_id': self.image_id,
-            'image': self.image.export() if self.image else None,
             'language': self.language
         }
 
-    def save(self):
-        dynamo.update(self.table_name, self.export())
-        return self
+        print(expand)
+        if 'show_hosts' in expand:
+            ret['show_hosts'] = list(map(
+                lambda x: Personality.load(x).export(),
+                self.show_host_ids or []))
+        if 'image' in expand:
+            ret['image'] = Photo.load(
+                self.image_id).export() if self.image_id else None
+
+        return ret
+
+    def episodes(self):
+        """
+        Returns the list of all episodes belonging to this 'Show'
+        """
+        return Episode.load_all(self.show_id)
 
 
 class Episode():
-    table_name = "teine-Episode"
+    table_name = 'teine-Episode'
 
-    def __init__(self, show_id, episode_id=str(uuid.uuid4()),
-                 title='', summary='', description='', media_id=None,
-                 guest_ids=[], links=[], status=None, **kwargs):
+    def __init__(self, episode_id, show_id, title='', summary='',
+                 description='', media_id=None, guest_ids=[], links=[],
+                 status=None, **kwargs):
+        """
+        Sets up a new in-memory 'Episode' by accessing database for
+        an existing episode_id
+        """
         self.episode_id = episode_id
         self.show_id = show_id
         self.title = title
@@ -83,73 +109,96 @@ class Episode():
         self.links = links
         self.status = status
 
+    @staticmethod
+    def _convert_links(val):
+        val['links'] = map(lambda x: Link(**x), val.get('links') or [])
+        return val
+
     @classmethod
-    def get_by_id(cls, episode_id):
+    def load(cls, episode_id):
+        """
+        Sets up a new in-memory 'Episode' by accessing database for
+        an existing episode_id
+        """
         rs = dynamo.query(cls.table_name, episode_id__eq=episode_id)
         for val in rs:
-            kwargs = val
-            kwargs['links'] = map(lambda x: Link(**x), val.get('links') or [])
-            return Episode(**kwargs)
+            kwargs = cls._convert_links(val)
+            return cls(**kwargs)
         return None
 
     @classmethod
-    def get_list(cls):
+    def load_all(cls, show_id=None):
+        """
+        Returns the list of all Episodes belonging to the passed show_id
+        """
         rs = dynamo.scan(cls.table_name)
 
         def adjust(val):
-            val['links'] = map(lambda x: Link(**x), val.get('links') or [])
-            return Episode(**val)
+            return Episode(**(cls._convert_links(val)))
         return [adjust(val) for val in rs]
 
-    @property
-    def guests(self):
-        if not self._guests:
-            self._guests = map(
-                lambda x: Personality.get_by_id(x), self.guest_ids)
-        return self._guests
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Constructs an unsaved 'Episode' instance.
+        To persist the data, you need to call 'Episode.save' on the instance
+        """
+        return cls(episode_id=str(uuid.uuid4()), **kwargs)
 
-    @property
-    def media(self):
-        if not self._media:
-            self._media = (Media.get_by_id(self.media_id)
-                           if self.media_id else None)
-        return self._media
+    def export(self, expand=[]):
+        """
+        Returns dictionary representing this 'Episode' instance
 
-    def export(self):
-        return {
+        To expand internal substructures, pass the attribute names
+        in the expand parameter
+        """
+        ret = {
             'episode_id': self.episode_id,
             'show_id': self.show_id,
             'title': self.title,
             'summary': self.summary,
             'description': self.description,
             'media_id': self.media_id,
-            'media': self.media.export() if self.media else None,
             'guest_ids': self.guest_ids,
-            'guests': list(map(lambda x: x.export(), self.guests)),
-            'links': list(map(lambda x: x.export(), self.links)),
             'status': self.status
         }
 
-    def export_to_db(self):
-        result = self.export()
-        result.pop('guests', None)
-        return result
+        if 'media' in expand:
+            ret['media'] = Media.load(
+                self.media_id).export() if self.media_id else None
+        if 'guests' in expand:
+            ret['guests'] = list(map(lambda x: x.export(), self.guests))
+        if 'links' in expand:
+            ret['links'] = list(map(lambda x: x.export(), self.links))
+        return ret
 
     def save(self):
-        dynamo.update(self.table_name, self.export_to_db())
+        """
+        Saves this 'Episode' data to database
+        """
+        dynamo.update(self.table_name, self.export(expand=['media', 'links']))
         return self
 
     def delete(self):
+        """
+        Deletes this Episode from database
+        """
         dynamo.delete(self.table_name, episode_id=self.episode_id)
         return True
 
 
 class Link():
     def __init__(self, url, title):
+        """
+        Returns a new in-memory 'Link' instance
+        """
         self.url = url
         self.title = title
 
     def export(self):
+        """
+        Returns the dictionary representation of this Link
+        """
         return {
             'url': self.url,
             'title': self.title
@@ -171,47 +220,39 @@ class Media():
         self.datetime = datetime
 
     @classmethod
-    def create_new(cls, owner_user_id, filename, **kwargs):
-        return Media(
-            str(uuid.uuid4()), owner_user_id, filename, **kwargs)
+    def create(cls, **kwargs):
+        """
+        Constructs an (unsaved) 'Media' instance.
+        To persist the data, you need to call 'Media.save' on the instance.
+        """
+        return cls(str(uuid.uuid4()), **kwargs)
 
     @classmethod
-    def get_by_id(cls, media_id):
+    def load(cls, media_id):
+        """
+        Sets up a new in-memory 'Media' by accessing database for
+        an existing media_id
+        """
         rs = dynamo.query(cls.table_name, media_id__eq=media_id)
         for val in rs:
             return Media(**val)
         return None
 
     @classmethod
-    def get_list(cls, user_id):
-        options = {
-            'owner_user_id__eq': user_id
-        }
-        rs = dynamo.scan(cls.table_name, **options)
+    def load_all(cls, user_id):
+        """
+        Returns the list of all Media objects owned by a specific user
+        """
+        rs = dynamo.scan(cls.table_name, owner_user_id__eq=user_id)
         return map(lambda x: Media(**x), rs)
 
-    def associate_episode(self, episode_id):
-        self.episode_id = episode_id
-        return self
+    def export(self, episode_summary=False):
+        """
+        Returns the dictionary representation of this Media
 
-    def dissociate_episode(self):
-        if not self.episode_id:
-            raise ValueError('Media not associated with an episode ({}, {})'
-                             .format(self.media_id, self.name))
-        self.episode_id = None
-        return self
-
-    def associated_with_episode(self):
-        return self.episode_id is not None
-
-    @property
-    def episode(self):
-        if not self._episode:
-            self._episode = Episode.get_by_id(self.episode_id)
-        return self._episode
-
-    def export(self):
-        return {
+        Set episode_summary True to pass the summary of the associated episode
+        """
+        ret = {
             'media_id': self.media_id,
             'owner_user_id': self.owner_user_id,
             'episode_id': self.episode_id,
@@ -220,24 +261,23 @@ class Media():
             'size': str(self.size),
             'datetime': self.datetime
         }
-
-    def export_with_episode_summary(self):
-        result = self.export()
-        if self.episode_id:
-            result['episode'] = {
-                'episode_id': self.episode.episode_id,
-                'title': self.episode.title,
-                'status': self.episode.status
-            }
-        return result
+        if episode_summary and self.episode_id:
+            ret['episode'] = Episode.load(self.episode_id).export()
+        return ret
 
     def save(self):
+        """
+        Saves this Media data to database
+        """
         data = self.export()
         data['datetime'] = datetime.datetime.utcnow().isoformat()
         dynamo.update(self.table_name, data)
         return self
 
     def delete(self):
+        """
+        Deletes this Media data from database
+        """
         dynamo.delete(self.table_name, media_id=self.media_id)
         s3_store.delete_key(self.media_id)
         return self
@@ -247,7 +287,7 @@ class Photo():
     table_name = 'teine-Photo'
 
     def __init__(self, photo_id, owner_user_id, thumbnail_id, filename,
-                 size=None, content_type=None, datetime=None):
+                 size=None, content_type=None, datetime=None, **kwargs):
         self.photo_id = photo_id
         self.owner_user_id = owner_user_id
         self.thumbnail_id = thumbnail_id
@@ -257,35 +297,50 @@ class Photo():
         self.datetime = datetime
 
     @classmethod
-    def create_new(cls, owner_user_id, thumbnail_id, filename, **kwargs):
-        dt = datetime.datetime.utcnow().isoformat()
-        return Photo(
-            str(uuid.uuid4()), owner_user_id, thumbnail_id, filename,
-            datetime=dt, **kwargs)
-
-    @classmethod
-    def get_list(cls, user_id):
-        options = {
-            'owner_user_id__eq': user_id
-        }
-        rs = dynamo.scan(cls.table_name, **options)
-        return map(lambda x: Photo(**x), rs)
-
-    @classmethod
-    def get_by_id(cls, photo_id):
+    def load(cls, photo_id):
+        """
+        Sets up a new in-memory 'Photo' by accessing database for
+        an existing photo_id
+        """
         rs = dynamo.query(cls.table_name, photo_id__eq=photo_id)
         for val in rs:
-            return Photo(**val)
+            return cls(**val)
         return None
 
+    @classmethod
+    def create(cls, **kwargs):
+        """
+        Constructs an (unsaved) 'Photo' instance.
+        To persist the data, you need to call 'Photo.save' on the instance.
+        """
+        return cls(photo_id=str(uuid.uuid4()),
+                   datetime=datetime.datetime.utcnow().isoformat(), **kwargs)
+
+    @classmethod
+    def load_all(cls, user_id):
+        """
+        Returns the list of all Photo objects owned by a specific user
+        """
+        rs = dynamo.scan(cls.table_name, owner_user_id__eq=user_id)
+        return map(lambda x: cls(**x), rs)
+
     def export(self):
+        """
+        Returns the dictionary representation of this Photo
+        """
         return self.__dict__
 
     def save(self):
+        """
+        Saves this Photo to database
+        """
         dynamo.update(self.table_name, self.export())
         return self
 
     def delete(self):
+        """
+        Deletes this Photo from database
+        """
         dynamo.delete(self.table_name, photo_id=self.photo_id)
         s3_store.delete_key(self.photo_id)
         return self
@@ -302,43 +357,55 @@ class Personality():
             twitter.get('screen_name') if twitter else None)
 
     @classmethod
-    def create_from_twitter(cls, screen_name, show_id,
-                            name='', description='',
-                            profile_image_url=None, **kwargs):
-        return Personality(str(uuid.uuid4()), show_id, twitter={
-            'screen_name': screen_name,
-            'name': name,
-            'description': description,
-            'profile_image_url': profile_image_url
-        })
-
-    @classmethod
-    def get_by_id(cls, personality_id):
+    def load(cls, personality_id):
+        """
+        Sets up a new in-memory 'Personality' by accessing database for
+        an existing personality_id
+        """
         rs = dynamo.query(cls.table_name, personality_id__eq=personality_id)
         for val in rs:
-            return Personality(**val)
+            return cls(**val)
         return None
 
     @classmethod
-    def find_by_twitter(cls, screen_name, show_id=None,
-                        create_when_not_found=False, **kwargs):
-        index = {
-            'index': 'twitter_screen_name-index',
-            'twitter_screen_name__eq': screen_name
-        }
-        rs = dynamo.query(cls.table_name, **index)
+    def find_by_twitter(cls, screen_name, create_when_not_found=False,
+                        **kwargs):
+        """
+        Like the 'load' method, but by twitter information instead of id
+
+        Set create_when_not_found to create the entity when not found.
+        This option will create and actually save the Personality to database.
+        When this option is passed, the keyword arguments expected
+        for the 'create_from_twitter' method are expected.
+        """
+        rs = dynamo.query(cls.table_name,
+                          index='twitter_screen_name-index',
+                          twitter_screen_name__eq=screen_name)
         for val in rs:
             return Personality(**val)
 
-        personality = Personality.create_from_twitter(
-            screen_name, show_id, **kwargs)
+        personality = cls.create_from_twitter(
+            screen_name=screen_name, **kwargs)
         return personality.save() if create_when_not_found else personality
 
-    def save(self):
-        dynamo.update(self.table_name, self.export())
-        return self
+    @classmethod
+    def create_from_twitter(cls, screen_name, name='', description='',
+                            profile_image_url=None, **kwargs):
+        """
+        Constructs an (unsaved) 'Personality' instance.
+        To persist the data, you need to call 'Personality.save'
+        """
+        return cls(personality_id=str(uuid.uuid4()),
+                   twitter={'screen_name': screen_name,
+                            'name': name,
+                            'description': description,
+                            'profile_image_url': profile_image_url},
+                   **kwargs)
 
     def export(self):
+        """
+        Returns the dictionary representation of this Personality
+        """
         return {
             'personality_id': self.personality_id,
             'show_id': self.show_id,
@@ -346,6 +413,13 @@ class Personality():
                 self.twitter.get('screen_name') if self.twitter else None),
             'twitter': self.twitter
         }
+
+    def save(self):
+        """
+        Saves this Personality to database
+        """
+        dynamo.update(self.table_name, self.export())
+        return self
 
 
 class User():
@@ -364,31 +438,35 @@ class User():
         self._is_anonymous = False
 
     @classmethod
-    def get_by_id(cls, user_id):
-        rs = dynamo.query(cls.table_name, user_id__eq=user_id)
-        for val in rs:
-            return User(**val)
+    def load(cls, user_id=None, username=None, password=None):
+        """
+        Sets up a new in-memory 'User' for an existing User instance
+        either by user_id or credentials
+        """
+        if user_id:
+            rs = dynamo.query(cls.table_name, user_id__eq=user_id)
+            for val in rs:
+                return cls(**val)
+            return None
+
+        if (username == settings.TEST_USER_NAME and
+                password == settings.TEST_USER_PASS):
+            return cls.load(user_id=settings.TEST_USER_ID)
+
         return None
 
     @classmethod
-    def get_by_credentials(cls, username, password):
-        if (username == settings.TEST_USER_NAME and
-                password == settings.TEST_USER_PASS):
-            return User.get_by_id(settings.TEST_USER_ID)
-        return None
-
-    @property
-    def user_id(self):
-        return self._user_id
-
-    @user_id.setter
-    def user_id(self, value):
-        self._user_id = value
-
-    def get_show_id(self):
-        return self.show_ids[0] if len(self.show_ids) else None
+    def create(cls, **kwargs):
+        """
+        Constructs an (unsaved) 'User' instance.
+        To persist the data, you need to call 'User.save'
+        """
+        pass
 
     def export(self):
+        """
+        Returns the dictionary representation of this User
+        """
         return {
             'user_id': self.user_id,
             'first_name': self.first_name,
@@ -398,6 +476,9 @@ class User():
         }
 
     def save(self):
+        """
+        Saves this User to database
+        """
         dynamo.update(self.table_name, self.export())
         return self
 

@@ -12,7 +12,7 @@ import urllib.request
 import uuid
 
 import externals
-import models
+import models_neo as models
 import settings
 import s3_store
 
@@ -25,7 +25,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return models.User.get_by_id(user_id)
+    return models.User.load(user_id=user_id)
 
 
 @login_manager.unauthorized_handler
@@ -39,7 +39,7 @@ def login():
         args = request.form
         username = args.get('username')
         password = args.get('password')
-        user = models.User.get_by_credentials(username, password)
+        user = models.User.load(username=username, password=password)
         if user:
             flask_login.login_user(user)
         return redirect(url_for('login'))
@@ -117,8 +117,7 @@ def show():
     if 'GET' == request.method:
         show_id = request.args['show_id']
         return json_response(
-            models.Show.get_by_id(show_id)
-            .load_hosts().load_image().export())
+            models.Show.load(show_id).export(expand=['show_hosts', 'image']))
 
     if request.method in ('POST', 'PUT'):
         user = flask_login.current_user
@@ -128,7 +127,7 @@ def show():
             lambda x: get_personality(x).personality_id,
             in_data.get('show_hosts')))
 
-        show = models.Show(user.user_id, **in_data)
+        show = models.Show(owner_user_id=user.user_id, **in_data)
         show.save()
         return json_response({
             'result': 'success',
@@ -198,19 +197,24 @@ def episode_list():
 @flask_login.login_required
 def dashboard_template_args(**kwargs):
     user = flask_login.current_user
+    # display primary show for now
     result = {
-        'show_id': user.get_show_id() or 'new'
+        'show_id': get_primary_show_id(user) or 'new'
     }
     for k, v in kwargs.items():
         result[k] = v
     return result
 
 
+def get_primary_show_id(user):
+    return user.show_ids[0] if len(user.show_ids) else None
+
+
 def get_personality(g):
     user = flask_login.current_user
     g.pop('show_id', None)
     return models.Personality.find_by_twitter(
-        show_id=user.get_show_id(), create_when_not_found=True,
+        show_id=get_primary_show_id(user), create_when_not_found=True,
         **g.get('twitter'))
 
 
@@ -226,23 +230,38 @@ def episode():
             lambda x: models.Link(**x), in_data.get('links'))
         ep = models.Episode(**in_data)
         if ep.media_id:
-            model = models.Media.get_by_id(ep.media_id)
-            model.associate_episode(ep.episode_id).save()
+            media = models.Media.load(ep.media_id)
+            media.episode_id = ep.episode_id
+            media.save()
         return ep
 
+    def upd_params():
+        in_data = request.get_json()
+        in_data['guest_ids'] = list(map(
+            lambda x: get_personality(x).personality_id,
+            in_data.get('guests')))
+        in_data['links'] = map(
+            lambda x: models.Link(**x), in_data.get('links'))
+        return in_data
+
     if 'POST' == request.method:
-        ep = episode_to_update().save()
+        ep = models.Episode.create(**upd_params()).save()
         return json_response({
             'result': 'success',
             'episode': ep.export()
         })
 
     if 'PUT' == request.method:
-        ep = episode_to_update()
-        original = models.Episode.get_by_id(ep.episode_id)
+        ep = models.Episode(**upd_params())
+        if ep.media_id:
+            # TODO doubtful...
+            media = models.Media.load(ep.media_id)
+            media.episode_id = ep.episode_id
+            media.save()
+        original = models.Episode.load(ep.episode_id)
 
         if original.media_id != ep.media_id and original.media_id:
-            original_media = models.Media.get_by_id(original.media_id)
+            original_media = models.Media.load(original.media_id)
             original_media.dissociate_episode().save()
 
         ep.save()
@@ -253,7 +272,7 @@ def episode():
         })
 
     if 'GET' == request.method:
-        ep = models.Episode.get_by_id(request.args['episode_id'])
+        ep = models.Episode.load(request.args['episode_id'])
         return json_response({
             'result': 'success',
             'episode': ep.export()
@@ -261,8 +280,9 @@ def episode():
 
     if 'DELETE' == request.method:
         episode_id = request.form.get('episode_id')
-        ep = models.Episode.get_by_id(episode_id)
+        ep = models.Episode.load(episode_id)
         if ep.media_id:
+            # TODO totally fails
             ep.media.dissociate_episode().save()
         ep.delete()
         return json_response({
@@ -275,25 +295,9 @@ def episode():
 def episodes():
     if 'GET' == request.method:
         return json_response(map(
-            lambda x: {'episode': x.export()}, models.Episode.get_list()))
-
-
-@app.route('/delete-media', methods=['POST'])
-@flask_login.login_required
-def delete_media():
-    media_id = request.form['media_id']
-    media = models.Media.get_by_id(media_id)
-    if media:
-        media.delete()
-        result = {
-            'result': 'success'
-        }
-    else:
-        result = {
-            'result': 'error',
-            'reason': 'media not found'
-        }
-    return json_response(result)
+            lambda x: {'episode': x.export()},
+            models.Episode.load_all(
+                get_primary_show_id(flask_login.current_user))))
 
 
 @app.route('/media/list', methods=['GET'])
@@ -316,8 +320,9 @@ def media():
             'content_type': uploaded_file.headers.get('Content-Type'),
             'size': os.stat(temp_f).st_size
         }
-        media = models.Media.create_new(
-            user.user_id, uploaded_file.filename, **media_info)
+        media = models.Media.create(owner_user_id=user.user_id,
+                                    name=uploaded_file.filename,
+                                    **media_info)
 
         s3_store.set_key_public_read(media.media_id, temp_f)
         media.save()
@@ -329,7 +334,7 @@ def media():
 
     if 'DELETE' == request.method:
         media_id = request.form.get('media_id')
-        media = models.Media.get_by_id(media_id)
+        media = models.Media.load(media_id)
         if media:
             media.delete()
             result = {
@@ -354,23 +359,24 @@ def download_media(media_id):
 @app.route('/media-list', methods=['GET'])
 @flask_login.login_required
 def retrieve_media_list():
-    media_list = models.Media.get_list(flask_login.current_user.user_id)
+    media_list = models.Media.load_all(flask_login.current_user.user_id)
     filter_param = request.args.get('filter')
     if filter_param == 'unused':
         media_list = filter(
-            lambda x: not x.associated_with_episode(), media_list)
+            lambda x: x.episode_id is None, media_list)
     if filter_param == 'used':
         media_list = filter(
-            lambda x: x.associated_with_episode(), media_list)
+            lambda x: x.episode_id is not None, media_list)
+
     return json_response(map(
-        lambda x: x.export_with_episode_summary(), media_list))
+        lambda x: x.export(episode_summary=True), media_list))
 
 
 @app.route('/photo', methods=['DELETE'])
 @flask_login.login_required
 def photo():
     photo_id = request.form.get('photo_id')
-    models.Photo.get_by_id(photo_id).delete()
+    models.Photo.load(photo_id).delete()
     return json_response({
         'result': 'success'
     })
@@ -380,7 +386,7 @@ def photo():
 @flask_login.login_required
 def photo_list():
     user_id = flask_login.current_user.user_id
-    photos = models.Photo.get_list(user_id)
+    photos = models.Photo.load_all(user_id)
     return json_response({
         'result': 'success',
         'photos': map(lambda x: x.export(), photos)
@@ -415,6 +421,8 @@ def upload_photo():
 
     if content_type == 'image/jpeg':
         image_type = 'jpeg'
+    if content_type == 'image/gif':
+        image_type = 'gif'
 
     thumbnail = temp_filepath('{}_thumbnail'.format(uploaded_file.filename))
     thumbnail_id = str(uuid.uuid4())
@@ -428,8 +436,10 @@ def upload_photo():
         'content_type': uploaded_file.headers.get('Content-Type'),
         'size': os.stat(temp_f).st_size
     }
-    photo = models.Photo.create_new(
-        user.user_id, thumbnail_id, uploaded_file.filename, **photo_info)
+    photo = models.Photo.create(owner_user_id=user.user_id,
+                                thumbnail_id=thumbnail_id,
+                                filename=uploaded_file.filename,
+                                **photo_info)
 
     s3_store.set_key_public_read(photo.photo_id, temp_f)
     photo.save()
