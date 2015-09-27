@@ -130,6 +130,7 @@ class Episode():
     def load_all(cls, show_id=None):
         """
         Returns the list of all Episodes belonging to the passed show_id
+        TODO show_id??
         """
         rs = dynamo.scan(cls.table_name)
 
@@ -462,6 +463,9 @@ class User():
         To persist the data, you need to call 'User.save'
         """
         pass
+
+    def primary_show_id(self):
+        return self.show_ids[0] if len(self.show_ids) else None
 
     def export(self):
         """
