@@ -1,5 +1,5 @@
 import boto
-import settings
+from teine import settings
 
 conn = boto.s3.connect_to_region(
     settings.S3_REGION,

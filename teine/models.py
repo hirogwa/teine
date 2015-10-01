@@ -1,13 +1,14 @@
 import datetime
 import uuid
 
-import dynamo
-import s3_store
-import settings
+from teine import dynamo, settings
 
 
 class Show():
-    table_name = "teine-Show"
+    table_name = "Show"
+
+    def __eq__(self, another):
+        return self.__dict__ == another.__dict__
 
     def __init__(self, show_id, owner_user_id, title='', author='', tagline='',
                  description='', show_host_ids=[], image_id='',
@@ -41,7 +42,7 @@ class Show():
         Constructs an (unsaved) 'Show' instance.
         To persist the data, you need to call 'Show.save' on the instance.
         """
-        return cls(show_id=uuid.uuid4(), **kwargs)
+        return cls(show_id=str(uuid.uuid4()), **kwargs)
 
     def save(self):
         """
@@ -49,6 +50,13 @@ class Show():
         """
         dynamo.update(self.table_name, self.export())
         return self
+
+    def delete(self):
+        """
+        Deletes this Show from database
+        """
+        dynamo.delete(self.table_name, show_id=self.show_id)
+        return True
 
     def export(self, expand=[]):
         """
@@ -69,7 +77,6 @@ class Show():
             'language': self.language
         }
 
-        print(expand)
         if 'show_hosts' in expand:
             ret['show_hosts'] = list(map(
                 lambda x: Personality.load(x).export(),
@@ -88,7 +95,10 @@ class Show():
 
 
 class Episode():
-    table_name = 'teine-Episode'
+    table_name = 'Episode'
+
+    def __eq__(self, another):
+        return self.__dict__ == another.__dict__
 
     def __init__(self, episode_id, show_id, title='', summary='',
                  description='', media_id=None, guest_ids=[], links=[],
@@ -111,7 +121,7 @@ class Episode():
 
     @staticmethod
     def _convert_links(val):
-        val['links'] = map(lambda x: Link(**x), val.get('links') or [])
+        val['links'] = list(map(lambda x: Link(**x), val.get('links') or []))
         return val
 
     @classmethod
@@ -130,6 +140,7 @@ class Episode():
     def load_all(cls, show_id=None):
         """
         Returns the list of all Episodes belonging to the passed show_id
+        TODO show_id??
         """
         rs = dynamo.scan(cls.table_name)
 
@@ -206,7 +217,7 @@ class Link():
 
 
 class Media():
-    table_name = 'teine-Media'
+    table_name = 'Media'
 
     def __init__(self, media_id, owner_user_id, name='', content_type=None,
                  size=0, episode_id=None, datetime=None):
@@ -279,12 +290,14 @@ class Media():
         Deletes this Media data from database
         """
         dynamo.delete(self.table_name, media_id=self.media_id)
-        s3_store.delete_key(self.media_id)
         return self
 
 
 class Photo():
-    table_name = 'teine-Photo'
+    table_name = 'Photo'
+
+    def __eq__(self, another):
+        return self.__dict__ == another.__dict__
 
     def __init__(self, photo_id, owner_user_id, thumbnail_id, filename,
                  size=None, content_type=None, datetime=None, **kwargs):
@@ -342,12 +355,14 @@ class Photo():
         Deletes this Photo from database
         """
         dynamo.delete(self.table_name, photo_id=self.photo_id)
-        s3_store.delete_key(self.photo_id)
         return self
 
 
 class Personality():
-    table_name = 'teine-Personality'
+    table_name = 'Personality'
+
+    def __eq__(self, another):
+        return self.__dict__ == another.__dict__
 
     def __init__(self, personality_id, show_id, twitter=None, **kwargs):
         self.personality_id = personality_id
@@ -368,7 +383,7 @@ class Personality():
         return None
 
     @classmethod
-    def find_by_twitter(cls, screen_name, create_when_not_found=False,
+    def find_by_twitter(cls, screen_name, show_id, create_when_not_found=False,
                         **kwargs):
         """
         Like the 'load' method, but by twitter information instead of id
@@ -384,18 +399,22 @@ class Personality():
         for val in rs:
             return Personality(**val)
 
-        personality = cls.create_from_twitter(
-            screen_name=screen_name, **kwargs)
-        return personality.save() if create_when_not_found else personality
+        # not found
+        if create_when_not_found:
+            return cls.create_from_twitter(
+                screen_name=screen_name, show_id=show_id, **kwargs).save()
+        else:
+            return None
 
     @classmethod
-    def create_from_twitter(cls, screen_name, name='', description='',
+    def create_from_twitter(cls, show_id, screen_name, name='', description='',
                             profile_image_url=None, **kwargs):
         """
         Constructs an (unsaved) 'Personality' instance.
         To persist the data, you need to call 'Personality.save'
         """
         return cls(personality_id=str(uuid.uuid4()),
+                   show_id=show_id,
                    twitter={'screen_name': screen_name,
                             'name': name,
                             'description': description,
@@ -421,9 +440,19 @@ class Personality():
         dynamo.update(self.table_name, self.export())
         return self
 
+    def delete(self):
+        '''
+        Deletes this Personality from database
+        '''
+        dynamo.delete(self.table_name, personality_id=self.personality_id)
+        return self
+
 
 class User():
-    table_name = 'teine-User'
+    table_name = 'User'
+
+    def __eq__(self, another):
+        return self.__dict__ == another.__dict__
 
     def __init__(self, user_id, first_name='', last_name='', email='',
                  show_ids=[]):
@@ -463,6 +492,9 @@ class User():
         """
         pass
 
+    def primary_show_id(self):
+        return self.show_ids[0] if len(self.show_ids) else None
+
     def export(self):
         """
         Returns the dictionary representation of this User
@@ -480,6 +512,13 @@ class User():
         Saves this User to database
         """
         dynamo.update(self.table_name, self.export())
+        return self
+
+    def delete(self):
+        '''
+        Deletes this User from database
+        '''
+        dynamo.delete(self.table_name, user_id=self.user_id)
         return self
 
     def is_authenticated(self):
