@@ -1,24 +1,17 @@
-from flask import Flask, Response, render_template, request, redirect, url_for
+from flask import Response, render_template, request, redirect, url_for
 from bs4 import BeautifulSoup
 import html
 import flask_login
 import json
-import os
 import socket
 import urllib.error
 import urllib.parse
 import urllib.request
 
-import externals
-import settings
+from teine import (app, externals, settings,
+                   episode_operations, audio_operations, photo_operations,
+                   show_operations, user_operations)
 
-import episode_operations
-import audio_operations
-import photo_operations
-import show_operations
-import user_operations
-
-app = Flask(__name__)
 app.secret_key = settings.SECRET_KEY
 
 login_manager = flask_login.LoginManager()
@@ -432,11 +425,3 @@ def sanitized_json(d):
 def json_response(data):
     return Response(
         json.dumps(sanitized_json(data)), mimetype='application/json')
-
-
-if __name__ == '__main__':
-    app.debug = True
-    app.run(
-        host='0.0.0.0',
-        port=int(os.getenv('PORT', 5000))
-    )

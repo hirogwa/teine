@@ -1,5 +1,4 @@
-import models
-import operations_common
+from teine import models, operations_common
 
 
 def get_by_id(episode_id):

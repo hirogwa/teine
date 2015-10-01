@@ -1,9 +1,10 @@
 from requests_oauthlib import OAuth1Session
 import base64
 import json
-import settings
 import urllib.parse
 import urllib.request
+
+from teine import settings
 
 
 def twitter_user(screen_name):

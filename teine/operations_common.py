@@ -1,7 +1,6 @@
 import os
 
-import models
-import settings
+from teine import models, settings
 
 
 def host_ids(show_id, people):

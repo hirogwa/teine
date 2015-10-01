@@ -2,9 +2,7 @@ from PIL import Image
 import os
 import uuid
 
-import models
-import operations_common
-import s3_store
+from teine import models, operations_common, s3_store
 
 
 def get_by_user(user):
@@ -46,5 +44,6 @@ def delete(photo_id):
     photo = models.Photo.load(photo_id)
     if photo:
         photo.delete()
+        s3_store.delete_key(photo_id)
     else:
         raise ValueError

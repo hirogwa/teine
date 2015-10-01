@@ -1,8 +1,6 @@
 import os
 
-import models
-import operations_common
-import s3_store
+from teine import models, operations_common, s3_store
 
 
 def get_by_user(user, include_used=True, include_unused=True):
@@ -36,5 +34,6 @@ def delete(media_id):
     media = models.Media.load(media_id)
     if media:
         media.delete()
+        s3_store.delete_key(media_id)
     else:
         raise ValueError

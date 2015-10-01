@@ -1,4 +1,4 @@
-import models
+from teine import models
 
 
 def get_by_id(user_id):
