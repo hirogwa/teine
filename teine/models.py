@@ -20,9 +20,7 @@ class Show():
         self.tagline = tagline
         self.description = description
         self.show_host_ids = show_host_ids
-        self.show_hosts = None
         self.image_id = image_id
-        self.image = None
         self.language = language
 
     @classmethod
@@ -37,12 +35,18 @@ class Show():
         return None
 
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, show_id, owner_user_id, title='', author='', tagline='',
+               description='', show_host_ids=[], image_id='',
+               language='en-us'):
         """
-        Constructs an (unsaved) 'Show' instance.
+        Constructs an unsaved 'Show' instance.
         To persist the data, you need to call 'Show.save' on the instance.
         """
-        return cls(show_id=str(uuid.uuid4()), **kwargs)
+        return cls(show_id=show_id,
+                   owner_user_id=owner_user_id,
+                   title=title, author=author, tagline=tagline,
+                   description=description, show_host_ids=show_host_ids,
+                   image_id=image_id, language=language)
 
     def save(self):
         """
