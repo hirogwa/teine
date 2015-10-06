@@ -42,10 +42,11 @@ class TestShow(unittest.TestCase):
 
     def test_create_and_delete(self):
         a = models.Show.create(
+            show_id='someShowId',
             owner_user_id='someUser',
             title='someTitle',
             author='someAuthor',
-            taglinle='someTagline',
+            tagline='someTagline',
             description='someDesc',
             show_host_ids=[],
             image_id='someImage',
