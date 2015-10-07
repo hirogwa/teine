@@ -6,8 +6,8 @@ def get_by_id(show_id):
     return models.Show.load(show_id)
 
 
-def update(show_id, user, title='', author='', tagline='',
-           description='', show_hosts=[], image_id='', language='en-us'):
+def update(show_id, title='', author='', tagline='', description='',
+           show_hosts=[], image_id='', language='en-us'):
     show = models.Show.load(show_id)
     if show:
         show.title = title
