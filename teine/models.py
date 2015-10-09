@@ -106,7 +106,7 @@ class Episode():
 
     def __init__(self, episode_id, show_id, title='', summary='',
                  description='', media_id=None, guest_ids=[], links=[],
-                 status=None, **kwargs):
+                 status=None):
         """
         Sets up a new in-memory 'Episode' by accessing database for
         an existing episode_id
@@ -153,12 +153,14 @@ class Episode():
         return [adjust(val) for val in rs]
 
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, episode_id, show_id, title='', summary='', description='',
+               media_id=None, guest_ids=[], links=[], status=None):
         """
         Constructs an unsaved 'Episode' instance.
         To persist the data, you need to call 'Episode.save' on the instance
         """
-        return cls(episode_id=str(uuid.uuid4()), **kwargs)
+        return cls(episode_id, show_id, title, summary, description, media_id,
+                   guest_ids, links, status)
 
     def export(self, expand=[]):
         """

@@ -1,3 +1,5 @@
+import uuid
+
 from teine import models, operations_common
 
 
@@ -9,23 +11,36 @@ def get_by_show(show_id):
     return models.Episode.load_all(show_id)
 
 
-def update(user, **kwargs):
-    after = models.Episode(user.primary_show_id(), **_upd_params(**kwargs))
-    before = models.Episode.load(after.episode_id)
-    if not before:
+def update(episode_id, title='', summary='', description='', media_id=None,
+           guests=[], links=[], status=None):
+    ep = models.Episode.load(episode_id)
+    if not ep:
         raise ValueError
 
-    if before.media_id != after.media_id and before.media_id:
-        _dissociate_media(before)
+    if ep.media_id != media_id and ep.media_id:
+        _dissociate_media(ep)
 
-    if after.episode_id:
-        _associate_media(after)
+    params = _generated_params(ep.show_id, guests=guests, links=links)
+    ep.title = title
+    ep.summary = summary
+    ep.description = description
+    ep.media_id = media_id
+    ep.guest_ids = params['guest_ids']
+    ep.links = params['links']
+    ep.status = status
 
-    return after.save()
+    if ep.episode_id:
+        _associate_media(ep)
+
+    return ep.save()
 
 
-def create(user, **kwargs):
-    ep = models.Episode.create(user.primary_show_id(), **_upd_params())
+def create(show_id, title='', summary='', description='', media_id=None,
+           guests=[], links=[], status=None):
+    params = _generated_params(show_id, guests=guests, links=links)
+    ep = models.Episode.create(str(uuid.uuid4()), show_id, title, summary,
+                               description, media_id,
+                               params['guest_ids'], params['links'], status)
     _associate_media(ep)
     return ep.save()
 
@@ -56,10 +71,8 @@ def _dissociate_media(episode):
     return episode
 
 
-def _upd_params(show_id, **kwargs):
-    original = kwargs.copy()
-    original.update({
-        'guest_ids': operations_common.host_ids(show_id, kwargs.get('guests')),
-        'links': map(lambda x: models.Link(**x), kwargs.get('links'))
-    })
-    return original
+def _generated_params(show_id, guests=[], links=[]):
+    return {
+        'guest_ids': operations_common.host_ids(show_id, guests),
+        'links': list(map(lambda x: models.Link(**x), links))
+    }
