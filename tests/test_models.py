@@ -97,7 +97,8 @@ class TestEpisode(unittest.TestCase):
                  models.Link(url='http://someurl02.com',
                              title='some link title 02')]
 
-        a = models.Episode.create(show_id='someShow',
+        a = models.Episode.create(episode_id='someEpisodeId',
+                                  show_id='someShow',
                                   title='someTitle',
                                   summary='someSummary',
                                   description='someDescription',

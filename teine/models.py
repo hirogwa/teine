@@ -106,7 +106,7 @@ class Episode():
 
     def __init__(self, episode_id, show_id, title='', summary='',
                  description='', media_id=None, guest_ids=[], links=[],
-                 status=None):
+                 status=None, **kwargs):
         """
         Sets up a new in-memory 'Episode' by accessing database for
         an existing episode_id
