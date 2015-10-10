@@ -225,6 +225,9 @@ class Link():
 class Media():
     table_name = 'Media'
 
+    def __eq__(self, another):
+        return self.__dict__ == another.__dict__
+
     def __init__(self, media_id, owner_user_id, name='', content_type=None,
                  size=0, episode_id=None, datetime=None):
         self.media_id = media_id
