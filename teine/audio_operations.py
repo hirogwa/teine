@@ -6,11 +6,11 @@ from teine import models, operations_common, s3_store
 def get_by_user(user, include_used=True, include_unused=True):
     media_list = models.Media.load_all(user.user_id)
     if not include_used:
-        media_list = filter(
-            lambda x: x.episode_id is None, media_list)
+        media_list = list(filter(
+            lambda x: x.episode_id is None, media_list))
     if not include_unused:
-        media_list = filter(
-            lambda x: x.episode_id is not None, media_list)
+        media_list = list(filter(
+            lambda x: x.episode_id is not None, media_list))
     return media_list
 
 
