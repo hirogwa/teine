@@ -125,7 +125,7 @@ class TestShowOperations(unittest.TestCase):
         before.save = MagicMock(return_value=before)
 
         after_actual = show_operations.update(
-            before.show_id, self.user, after_args['title'],
+            before.show_id, after_args['title'],
             after_args['author'], after_args['tagline'],
             after_args['description'], [], after_args['image_id'],
             after_args['language'])
@@ -150,5 +150,5 @@ class TestShowOperations(unittest.TestCase):
         models.Show.load = MagicMock(return_value=None)
 
         with self.assertRaises(ValueError):
-            show_operations.update(show_id, self.user)
+            show_operations.update(show_id)
             models.Show.load.assert_called_with(show_id)
