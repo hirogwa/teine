@@ -1,5 +1,5 @@
 import os
-import unittest.mock
+import unittest
 from unittest.mock import MagicMock
 
 from teine import models, s3_store, audio_operations, operations_common
@@ -46,8 +46,10 @@ class TestAudioOperations(unittest.TestCase):
 
     @unittest.mock.patch.object(models.Media, 'create')
     @unittest.mock.patch.object(s3_store, 'set_key_public_read')
+    @unittest.mock.patch.object(os, 'stat')
     @unittest.mock.patch.object(operations_common, 'temp_filepath')
-    def test_create(self, mock_filepath, mock_s3_set_key, mock_media_create):
+    def test_create(self, mock_filepath, mock_os_stat, mock_s3_set_key,
+                    mock_media_create):
         expected = models.Media(media_id='someMediaId',
                                 owner_user_id=self.user.user_id,
                                 name='someFileName')
@@ -75,9 +77,11 @@ class TestAudioOperations(unittest.TestCase):
 
     @unittest.mock.patch.object(models.Media, 'load')
     def test_delete_non_existing_audio(self, mock_media_load):
+        media_id = 'noSuchMeidaId'
         mock_media_load.return_value = None
         with self.assertRaises(ValueError):
-            audio_operations.delete('noSuchId')
+            audio_operations.delete(media_id)
+        models.Media.load.assert_called_with(media_id)
 
     @unittest.mock.patch.object(s3_store, 'delete_key')
     @unittest.mock.patch.object(models.Media, 'load')
