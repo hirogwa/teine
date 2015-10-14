@@ -1,6 +1,6 @@
 import boto
-from boto.dynamodb2.table import Table
-from boto.dynamodb2.table import Item
+from boto.dynamodb2.table import Table, Item
+from boto.dynamodb2.fields import GlobalAllIndex, HashKey, RangeKey
 
 from teine import settings
 
@@ -10,19 +10,53 @@ conn = boto.dynamodb2.connect_to_region(
     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
 )
 
-table_prefix = None
+table_prefix = 'teine-'
 
 
 def init_dev():
     global table_prefix
-    table_prefix = 'teine-'
+    table_prefix = 'teine-dev-'
 
 
 def init_test():
     global table_prefix
-    # TODO
-    # table_prefix = 'teine-test-'
-    table_prefix = 'teine-'
+    table_prefix = 'teine-test-'
+
+
+def create_table(table_name, hash_key, range_key=None,
+                 global_secondary_indexes=[]):
+    default_throughput = {'read': 1, 'write': 1}
+
+    def generate_index(idx):
+        if len(idx) == 1:
+            return GlobalAllIndex(
+                '{}-index'.format(idx[0]),
+                parts=[HashKey(idx[0])],
+                throughput=default_throughput)
+        if len(idx) == 2:
+            return GlobalAllIndex(
+                '{}-{}-index'.format(idx[0], idx[1]),
+                parts=[HashKey(idx[0]), RangeKey(idx[1])],
+                throughput=default_throughput)
+        raise ValueError
+
+    schema = [HashKey(hash_key)]
+    if range_key:
+        schema.append(RangeKey(range_key))
+
+    table = Table.create(
+        _table_name(table_name), schema=schema,
+        throughput=default_throughput,
+        global_indexes=list(map(
+            lambda x: generate_index(x), global_secondary_indexes)),
+        connection=conn)
+
+    return table
+
+
+def delete_table(table_name):
+    table = Table(_table_name(table_name), connection=conn)
+    table.delete()
 
 
 def update(table_name, data):

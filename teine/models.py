@@ -6,6 +6,8 @@ from teine import dynamo, settings
 
 class Show():
     table_name = "Show"
+    hash_key = 'show_id'
+    secondary_indexes = [('owner_user_id',)]
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
@@ -100,6 +102,8 @@ class Show():
 
 class Episode():
     table_name = 'Episode'
+    hash_key = 'episode_id'
+    secondary_indexes = [('show_id', 'input_datetime')]
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
@@ -224,6 +228,8 @@ class Link():
 
 class Media():
     table_name = 'Media'
+    hash_key = 'media_id'
+    secondary_indexes = [('owner_user_id',)]
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
@@ -304,6 +310,7 @@ class Media():
 
 class Photo():
     table_name = 'Photo'
+    hash_key = 'photo_id'
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
@@ -369,6 +376,8 @@ class Photo():
 
 class Personality():
     table_name = 'Personality'
+    hash_key = 'personality_id'
+    secondary_indexes = [('twitter_screen_name',)]
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
@@ -459,6 +468,7 @@ class Personality():
 
 class User():
     table_name = 'User'
+    hash_key = 'user_id'
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
