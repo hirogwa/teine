@@ -30,15 +30,8 @@ class TestShowOperations(unittest.TestCase):
             image_id='image01',
             language='ja'))
 
-        for x in cls.predefined:
-            x.save()
-
-    @classmethod
-    def tearDownClass(cls):
-        for x in cls.predefined:
-            x.delete()
-
-    def test_get_by_id(self):
+    @mock.patch.object(models.Show, 'load')
+    def test_get_by_id(self, mock_show_load):
         show_id = 'showId'
         show = models.Show(
             show_id=show_id,
@@ -51,12 +44,15 @@ class TestShowOperations(unittest.TestCase):
             image_id='image',
             language='ja')
 
-        models.Show.load = mock.MagicMock(return_value=show)
+        mock_show_load.return_value = show
 
         self.assertEqual(show, show_operations.get_by_id(show_id))
         models.Show.load.assert_called_with(show_id)
 
-    def test_create(self):
+    @mock.patch.object(models.Show, 'create')
+    @mock.patch.object(operations_common, 'host_ids')
+    @mock.patch.object(uuid, 'uuid4')
+    def test_create(self, mock_uuid, mock_host_ids, mock_show_create):
         args = {
             'show_id': 'newShowId',
             'owner_user_id': self.user.user_id,
@@ -70,10 +66,9 @@ class TestShowOperations(unittest.TestCase):
         }
         expected = models.Show(**args)
 
-        uuid.uuid4 = mock.MagicMock(return_value=args['show_id'])
-        operations_common.host_ids = mock.MagicMock(
-            return_value=args['show_host_ids'])
-        models.Show.create = mock.MagicMock(return_value=expected)
+        mock_uuid.return_value = args['show_id']
+        mock_host_ids.return_value = args['show_host_ids']
+        mock_show_create.return_value = expected
         expected.save = mock.MagicMock(return_value=expected)
 
         actual = show_operations.create(
@@ -104,7 +99,9 @@ class TestShowOperations(unittest.TestCase):
         self.assertEqual(expected.image_id, actual.image_id)
         self.assertEqual(expected.language, actual.language)
 
-    def test_update(self):
+    @mock.patch.object(models.Show, 'load')
+    @mock.patch.object(operations_common, 'host_ids')
+    def test_update(self, mock_host_ids, mock_show_load):
         before = self.predefined[0]
         after_args = {
             'show_id': before.show_id,
@@ -119,9 +116,8 @@ class TestShowOperations(unittest.TestCase):
         }
         after = models.Show(**after_args)
 
-        operations_common.host_ids = mock.MagicMock(
-            return_value=after_args['show_host_ids'])
-        models.Show.load = mock.MagicMock(return_value=before)
+        mock_host_ids.return_value = after_args['show_host_ids']
+        mock_show_load.return_value = before
         before.save = mock.MagicMock(return_value=before)
 
         after_actual = show_operations.update(
@@ -145,9 +141,10 @@ class TestShowOperations(unittest.TestCase):
         self.assertEqual(after.image_id, after_actual.image_id)
         self.assertEqual(after.language, after_actual.language)
 
-    def test_update_non_existing_show(self):
+    @mock.patch.object(models.Show, 'load')
+    def test_update_non_existing_show(self, mock_show_load):
         show_id = 'noSuchShow'
-        models.Show.load = mock.MagicMock(return_value=None)
+        mock_show_load.return_value = None
 
         with self.assertRaises(ValueError):
             show_operations.update(show_id)
