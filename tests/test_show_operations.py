@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest import mock
 import unittest
 import uuid
 
@@ -51,7 +51,7 @@ class TestShowOperations(unittest.TestCase):
             image_id='image',
             language='ja')
 
-        models.Show.load = MagicMock(return_value=show)
+        models.Show.load = mock.MagicMock(return_value=show)
 
         self.assertEqual(show, show_operations.get_by_id(show_id))
         models.Show.load.assert_called_with(show_id)
@@ -70,11 +70,11 @@ class TestShowOperations(unittest.TestCase):
         }
         expected = models.Show(**args)
 
-        uuid.uuid4 = MagicMock(return_value=args['show_id'])
-        operations_common.host_ids = MagicMock(
+        uuid.uuid4 = mock.MagicMock(return_value=args['show_id'])
+        operations_common.host_ids = mock.MagicMock(
             return_value=args['show_host_ids'])
-        models.Show.create = MagicMock(return_value=expected)
-        expected.save = MagicMock(return_value=expected)
+        models.Show.create = mock.MagicMock(return_value=expected)
+        expected.save = mock.MagicMock(return_value=expected)
 
         actual = show_operations.create(
             self.user, args['title'], args['author'], args['tagline'],
@@ -119,10 +119,10 @@ class TestShowOperations(unittest.TestCase):
         }
         after = models.Show(**after_args)
 
-        operations_common.host_ids = MagicMock(
+        operations_common.host_ids = mock.MagicMock(
             return_value=after_args['show_host_ids'])
-        models.Show.load = MagicMock(return_value=before)
-        before.save = MagicMock(return_value=before)
+        models.Show.load = mock.MagicMock(return_value=before)
+        before.save = mock.MagicMock(return_value=before)
 
         after_actual = show_operations.update(
             before.show_id, after_args['title'],
@@ -147,7 +147,7 @@ class TestShowOperations(unittest.TestCase):
 
     def test_update_non_existing_show(self):
         show_id = 'noSuchShow'
-        models.Show.load = MagicMock(return_value=None)
+        models.Show.load = mock.MagicMock(return_value=None)
 
         with self.assertRaises(ValueError):
             show_operations.update(show_id)

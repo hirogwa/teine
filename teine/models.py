@@ -401,32 +401,20 @@ class Personality():
         return None
 
     @classmethod
-    def find_by_twitter(cls, screen_name, show_id, create_when_not_found=False,
-                        **kwargs):
+    def find_by_twitter(cls, screen_name, show_id):
         """
         Like the 'load' method, but by twitter information instead of id
-
-        Set create_when_not_found to create the entity when not found.
-        This option will create and actually save the Personality to database.
-        When this option is passed, the keyword arguments expected
-        for the 'create_from_twitter' method are expected.
         """
         rs = dynamo.query(cls.table_name,
                           index='twitter_screen_name-index',
                           twitter_screen_name__eq=screen_name)
         for val in rs:
             return Personality(**val)
-
-        # not found
-        if create_when_not_found:
-            return cls.create_from_twitter(
-                screen_name=screen_name, show_id=show_id, **kwargs).save()
-        else:
-            return None
+        return None
 
     @classmethod
     def create_from_twitter(cls, show_id, screen_name, name='', description='',
-                            profile_image_url=None, **kwargs):
+                            profile_image_url=None):
         """
         Constructs an (unsaved) 'Personality' instance.
         To persist the data, you need to call 'Personality.save'
@@ -436,8 +424,7 @@ class Personality():
                    twitter={'screen_name': screen_name,
                             'name': name,
                             'description': description,
-                            'profile_image_url': profile_image_url},
-                   **kwargs)
+                            'profile_image_url': profile_image_url})
 
     def export(self):
         """

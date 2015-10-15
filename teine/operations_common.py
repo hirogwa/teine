@@ -8,11 +8,18 @@ def host_ids(show_id, people):
     Convert show hosts passed from the client to host ids,
     creating the host entites if necessary
     '''
+    def find_personality_or_create(show_id, screen_name, name, description,
+                                   profile_image_url):
+        p = models.Personality.find_by_twitter(screen_name, show_id)
+        if p:
+            return p
+        else:
+            return models.Personality.create_from_twitter(
+                show_id, screen_name, name, description, profile_image_url)
+
     return list(map(
-        lambda x: models.Personality.find_by_twitter(
-            show_id=show_id,
-            create_when_not_found=True,
-            **x.get('twitter')).personality_id,
+        lambda x: find_personality_or_create(
+            show_id, **x.get('twitter')).personality_id,
         people))
 
 
