@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest import mock
 import unittest
 import uuid
 
@@ -31,7 +31,7 @@ class TestEpisodeOperation(unittest.TestCase):
                            description='description02',
                            media_id='mediaId02'))
 
-    @unittest.mock.patch.object(models.Episode, 'load')
+    @mock.patch.object(models.Episode, 'load')
     def test_get_by_id(self, mock_episode_load):
         expected = self.predefined[0]
         mock_episode_load.return_value = expected
@@ -40,7 +40,7 @@ class TestEpisodeOperation(unittest.TestCase):
         models.Episode.load.assert_called_with(expected.episode_id)
         self.assertEqual(expected, actual)
 
-    @unittest.mock.patch.object(models.Episode, 'load_all')
+    @mock.patch.object(models.Episode, 'load_all')
     def test_get_by_show(self, mock_episode_load_all):
         expected = [x for x in self.predefined
                     if x.show_id == self.show_id_one]
@@ -51,9 +51,10 @@ class TestEpisodeOperation(unittest.TestCase):
         models.Episode.load_all.assert_called_with(self.show_id_one)
         self.assertEqual(expected, actual)
 
-    @unittest.mock.patch.object(models.Media, 'load')
-    @unittest.mock.patch.object(models.Episode, 'load')
-    def test_update(self, mock_episode_load, mock_media_load):
+    @mock.patch.object(operations_common, 'host_ids')
+    @mock.patch.object(models.Media, 'load')
+    @mock.patch.object(models.Episode, 'load')
+    def test_update(self, mock_episode_load, mock_media_load, mock_host_ids):
         media_before = models.Media(
             media_id='mediaId01',
             owner_user_id=self.user.user_id,
@@ -82,10 +83,10 @@ class TestEpisodeOperation(unittest.TestCase):
 
         mock_episode_load.return_value = before
         mock_media_load.side_effect = media_load
-        media_before.save = MagicMock(return_value=media_before)
-        operations_common.host_ids = MagicMock(return_value=after.guest_ids)
-        media_after.save = MagicMock(return_value=media_after)
-        before.save = MagicMock(return_value=before)
+        media_before.save = mock.MagicMock(return_value=media_before)
+        mock_host_ids.return_value = after.guest_ids
+        media_after.save = mock.MagicMock(return_value=media_after)
+        before.save = mock.MagicMock(return_value=before)
 
         actual = episode_operations.update(
             before.episode_id, after.title, after.summary, after.description,
@@ -105,7 +106,7 @@ class TestEpisodeOperation(unittest.TestCase):
         self.assertEqual(after.links, actual.links)
         self.assertEqual(after.status, actual.status)
 
-    @unittest.mock.patch.object(models.Episode, 'load')
+    @mock.patch.object(models.Episode, 'load')
     def test_update_non_existing_episode(self, mock_episode_load):
         episode_id = 'noSuchId'
         mock_episode_load.return_value = None
@@ -113,10 +114,10 @@ class TestEpisodeOperation(unittest.TestCase):
             episode_operations.update(episode_id)
             models.Episode.load.assert_called_with(episode_id)
 
-    @unittest.mock.patch.object(models.Media, 'load')
-    @unittest.mock.patch.object(operations_common, 'host_ids')
-    @unittest.mock.patch.object(models.Episode, 'load')
-    @unittest.mock.patch.object(models.Episode, 'create')
+    @mock.patch.object(models.Media, 'load')
+    @mock.patch.object(operations_common, 'host_ids')
+    @mock.patch.object(models.Episode, 'load')
+    @mock.patch.object(models.Episode, 'create')
     def test_create_and_delete(self, mock_episode_create, mock_episode_load,
                                mock_host_ids, mock_media_load):
         # Create
@@ -134,12 +135,12 @@ class TestEpisodeOperation(unittest.TestCase):
                                   guest_ids=['someGuest', 'anotherGuest'],
                                   links=[], status='someStatus')
 
-        uuid.uuid4 = MagicMock(return_value=expected.episode_id)
+        uuid.uuid4 = mock.MagicMock(return_value=expected.episode_id)
         mock_episode_create.return_value = expected
         mock_host_ids.return_value = expected.guest_ids
         mock_media_load.return_value = media
-        media.save = MagicMock(return_value=media)
-        expected.save = MagicMock(return_value=expected)
+        media.save = mock.MagicMock(return_value=media)
+        expected.save = mock.MagicMock(return_value=expected)
 
         actual = episode_operations.create(
             expected.show_id, expected.title, expected.summary,
@@ -159,15 +160,15 @@ class TestEpisodeOperation(unittest.TestCase):
         media_id_before_dissociation = actual.media_id
         mock_episode_load.return_value = actual
         mock_media_load.return_value = media
-        media.save = MagicMock(return_value=media)
-        actual.delete = MagicMock(return_value=True)
+        media.save = mock.MagicMock(return_value=media)
+        actual.delete = mock.MagicMock(return_value=True)
         self.assertIsNone(episode_operations.delete(actual.episode_id))
         models.Episode.load.assert_called_with(actual.episode_id)
         models.Media.load.assert_called_with(media_id_before_dissociation)
         media.save.assert_called_with()
         actual.delete.assert_called_with()
 
-    @unittest.mock.patch.object(models.Episode, 'load')
+    @mock.patch.object(models.Episode, 'load')
     def test_delete_non_existing_episode(self, mock_episode_load):
         episode_id = 'noSuchId'
         mock_episode_load.return_value = None
