@@ -10,17 +10,12 @@ conn = boto.dynamodb2.connect_to_region(
     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
 )
 
-table_prefix = 'teine-'
-
-
-def init_dev():
-    global table_prefix
-    table_prefix = 'teine-dev-'
+table_prefix = '{}-'.format(settings.SCHEMA)
 
 
 def init_test():
     global table_prefix
-    table_prefix = 'teine-test-'
+    table_prefix = '{}'.format(settings.SCHEMA_TEST)
 
 
 def create_table(table_name, hash_key, range_key=None,
