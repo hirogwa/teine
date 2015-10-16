@@ -1,7 +1,5 @@
-from teine import app, dynamo
+from teine import app
 import os
-
-dynamo.init_dev()
 
 app.debug = True
 app.run(

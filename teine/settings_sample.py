@@ -28,3 +28,6 @@ TWITTER_URL_USER_SHOW = 'https://api.twitter.com/1.1/users/show.json'
 TWITTER_URL_USER_SEARCH = 'https://api.twitter.com/1.1/users/search.json'
 
 APP_HOST = 'http://localhost:5000'
+
+SCHEMA = 'teine'
+SCHEMA_TEST = 'teine-test'
