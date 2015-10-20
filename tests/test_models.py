@@ -217,6 +217,7 @@ class TestUser(unittest.TestCase):
     def setUpClass(cls):
         cls.predefined.append(models.User(
             user_id='user',
+            password='hashedPass',
             first_name='firstName',
             last_name='lastName',
             email='email',

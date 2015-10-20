@@ -9,8 +9,9 @@ class TestUserOperations(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.predefined.append(models.User('userId01', 'FirstName', 'Awesome',
-                                          'awesome@somedomain.com'))
+        cls.predefined.append(models.User(
+            'userId01', 'someHashedPass', 'awesome@somedomain.com',
+            'FirstName', 'LastName'))
 
     @mock.patch.object(models.User, 'load')
     def test_get_by_id(self, mock_user_load):
