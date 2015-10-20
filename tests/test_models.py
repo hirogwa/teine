@@ -233,3 +233,13 @@ class TestUser(unittest.TestCase):
 
     def test_load_by_id(self):
         self.assertEqual(self.predefined[0], models.User.load(user_id='user'))
+
+    def test_create_and_delete(self):
+        user_id = 'userId'
+        user = models.User.create(user_id, 'hashedPass', 'example@email.com',
+                                  'FirstName', 'LastName')
+        user.save()
+        self.assertIsNotNone(models.User.load(user_id=user_id))
+
+        user.delete()
+        self.assertIsNone(models.User.load(user_id=user_id))
