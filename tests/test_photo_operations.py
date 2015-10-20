@@ -14,6 +14,7 @@ class TestPhotoOperations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.user = models.User(user_id='userId01',
+                               password='hashedPass',
                                first_name='FirstName',
                                last_name='Awesome',
                                email='awesome@some.com')

@@ -460,12 +460,16 @@ class User():
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
 
-    def __init__(self, user_id, first_name='', last_name='', email='',
+    def __init__(self, user_id, password, email, first_name, last_name,
                  show_ids=[]):
         self.user_id = user_id
+        self.password = password
+        self.email = email
         self.first_name = first_name
         self.last_name = last_name
-        self.email = email
+
+        # TODO this should probably belong somewhere else.
+        # this is User "account" class
         self.show_ids = show_ids
 
         self._is_authenticated = True
@@ -491,12 +495,12 @@ class User():
         return None
 
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, user_id, password, email, first_name, last_name):
         """
         Constructs an (unsaved) 'User' instance.
         To persist the data, you need to call 'User.save'
         """
-        pass
+        return cls(user_id, password, email, first_name, last_name)
 
     def primary_show_id(self):
         return self.show_ids[0] if len(self.show_ids) else None
@@ -517,7 +521,9 @@ class User():
         """
         Saves this User to database
         """
-        dynamo.update(self.table_name, self.export())
+        data = self.export()
+        data['password'] = self.password
+        dynamo.update(self.table_name, data)
         return self
 
     def delete(self):

@@ -9,8 +9,9 @@ class TestUserOperations(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.predefined.append(models.User('userId01', 'FirstName', 'Awesome',
-                                          'awesome@somedomain.com'))
+        cls.predefined.append(models.User(
+            'userId01', 'someHashedPass', 'awesome@somedomain.com',
+            'FirstName', 'LastName'))
 
     @mock.patch.object(models.User, 'load')
     def test_get_by_id(self, mock_user_load):
@@ -47,3 +48,19 @@ class TestUserOperations(unittest.TestCase):
         with self.assertRaises(ValueError):
             user_operations.update(user_id, 'f_name', 'l_name', 'email', [])
         models.User.load.assert_called_with(user_id)
+
+    @mock.patch.object(models.User, 'create')
+    def test_signup(self, mock_user_create):
+        user = models.User('userId', 'hashedPass', 'some@example.com',
+                           'SomeFirstName', 'SomeLastName')
+        user.save = mock.MagicMock(return_value=user)
+        mock_user_create.return_value = user
+
+        actual = user_operations.signup(user.user_id, user.password,
+                                        user.email, user.first_name,
+                                        user.last_name)
+
+        self.assertEqual(user, actual)
+
+        self.assertTrue(mock_user_create.called)
+        user.save.assert_called_with()

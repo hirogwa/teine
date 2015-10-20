@@ -9,6 +9,7 @@ class TestEpisodeOperation(unittest.TestCase):
     show_id_one = 'showId01'
     predefined = []
     user = models.User(user_id='userId',
+                       password='hashedPass',
                        first_name='FirstName',
                        last_name='LastName',
                        email='testuser@somedomain.com',

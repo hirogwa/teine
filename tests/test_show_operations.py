@@ -12,6 +12,7 @@ def setUpModule():
 class TestShowOperations(unittest.TestCase):
     predefined = []
     user = models.User(user_id='userId',
+                       password='hashedPass',
                        first_name='FirstName',
                        last_name='LastName',
                        email='testuser@somedomain.com',
