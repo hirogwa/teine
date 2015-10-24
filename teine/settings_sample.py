@@ -31,3 +31,9 @@ APP_HOST = 'http://localhost:5000'
 
 SCHEMA = 'teine'
 SCHEMA_TEST = 'teine-test'
+
+# Authorization
+FIXED_SALT_STRING = ''
+STRETCH_COUNT = 1000
+
+ENCODING = 'utf-8'
