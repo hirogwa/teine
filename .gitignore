@@ -5,4 +5,4 @@ node_modules
 temp
 settings.py
 testdata
-teine/static/dashboard-bundle.*
+teine/static/*-bundle.*

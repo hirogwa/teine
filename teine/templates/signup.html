@@ -1,26 +1,14 @@
-{% extends "base.html" %}
-
-{% block head %}
-<link rel="stylesheet" type="text/css" href="/static/css/user_account.css">
-{% endblock %}
+{% extends "account-base.html" %}
 
 {% block content %}
 
-<form class="form-signup">
-  <h3 class="form-signup-heading">New to Teine?</h3>
-  <label for="input-user-name" class="sr-only">Username</label>
-  <input type="" id="input-user-name" name="username"
-         class="form-control" placeholder="Username" required autofocus>
-  <label for="input-email" class="sr-only">Email</label>
-  <input type="" id="input-email" name="email"
-         class="form-control" placeholder="Email" required autofocus>
-  <label for="input-password" class="sr-only">Password</label>
-  <input type="password" id="input-password" name="password"
-         class="form-control" placeholder="Password" required>
-  <button class="btn btn-lg btn-primary btn-block"
-          type="submit" formmethod="post">
-    Sign up
-  </button>
-</form>
+<div id="user-signup-page">
+</div>
+
+<script type="text/javascript">
+  $(function() {
+        new teineAccount.UserSignupView();
+    });
+</script>
 
 {% endblock %}
