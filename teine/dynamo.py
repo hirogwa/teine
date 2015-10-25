@@ -81,9 +81,12 @@ def query(table_name, hash_value, primary_hash_key=None, index_hash_key=None):
     return table.query_2(**cond)
 
 
-def scan(table_name, **kwargs):
+def scan(table_name, hash_value=None, primary_hash_key=None):
     table = Table(_table_name(table_name), connection=conn)
-    return table.scan(**kwargs)
+    cond = dict()
+    if primary_hash_key:
+        cond['{}__eq'.format(primary_hash_key)] = hash_value
+    return table.scan(**cond)
 
 
 def delete(table_name, **kwargs):

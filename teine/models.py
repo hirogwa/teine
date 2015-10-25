@@ -269,7 +269,7 @@ class Media():
         """
         Returns the list of all Media objects owned by a specific user
         """
-        rs = dynamo.scan(cls.table_name, owner_user_id__eq=user_id)
+        rs = dynamo.scan(cls.table_name, user_id, 'owner_user_id')
         return map(lambda x: Media(**x), rs)
 
     def export(self, episode_summary=False):
@@ -350,7 +350,7 @@ class Photo():
         """
         Returns the list of all Photo objects owned by a specific user
         """
-        rs = dynamo.scan(cls.table_name, owner_user_id__eq=user_id)
+        rs = dynamo.scan(cls.table_name, user_id, 'owner_user_id')
         return map(lambda x: cls(**x), rs)
 
     def export(self):
