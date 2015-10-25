@@ -7,7 +7,7 @@ body {
     font-weight: light;
 }
 
-.form-login {
+.form-login, .form-signup {
     max-width: 330px;
     margin: auto;
 }
@@ -17,6 +17,6 @@ body {
     margin-bottom: 0.5em;
 }
 
-.form-login button {
+.form-login button, .form-signup button {
     margin-top: 1em;
 }

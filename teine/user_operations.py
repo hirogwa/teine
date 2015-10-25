@@ -2,12 +2,22 @@ import hashlib
 from teine import models, settings
 
 
+class SignUpValidationException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def get_by_id(user_id):
     return models.User.load(user_id=user_id)
 
 
-def get_by_credentials(username, password):
-    return models.User.load(username=username, password=_hash(password))
+def get_by_email(email):
+    return models.User.load(email=email)
+
+
+def get_by_credentials(user_id, password):
+    user = models.User.load(user_id=user_id)
+    return user if user.password == _hash(password) else None
 
 
 def update(user_id, first_name, last_name, email, show_ids):
@@ -22,7 +32,14 @@ def update(user_id, first_name, last_name, email, show_ids):
         raise ValueError
 
 
-def signup(user_id, password, email, first_name, last_name):
+def signup(user_id, password, email, first_name='', last_name=''):
+    if get_by_id(user_id):
+        raise SignUpValidationException(
+            'user_id already exists: {}'.format(user_id))
+    if get_by_email(email):
+        raise SignUpValidationException(
+            'email already registered: {}'.format(email))
+
     return models.User.create(
         user_id, _hash(password), email, first_name, last_name).save()
 
