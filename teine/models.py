@@ -456,11 +456,12 @@ class Personality():
 class User():
     table_name = 'User'
     hash_key = 'user_id'
+    secondary_indexes = [('email',)]
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
 
-    def __init__(self, user_id, password, email, first_name, last_name,
+    def __init__(self, user_id, password, email, first_name='', last_name='',
                  show_ids=[]):
         self.user_id = user_id
         self.password = password
@@ -475,10 +476,10 @@ class User():
         self._is_anonymous = False
 
     @classmethod
-    def load(cls, user_id=None, username=None, password=None):
+    def load(cls, user_id=None, email=None):
         """
         Sets up a new in-memory 'User' for an existing User instance
-        either by user_id or credentials
+        either by user_id or email
         """
         if user_id:
             rs = dynamo.query(cls.table_name, user_id__eq=user_id)
@@ -486,10 +487,13 @@ class User():
                 return cls(**val)
             return None
 
-        if (username == settings.TEST_USER_NAME and
-                password == settings.TEST_USER_PASS):
-            return cls.load(user_id=settings.TEST_USER_ID)
-
+        if email:
+            rs = dynamo.query(cls.table_name,
+                              index='email-index',
+                              email__eq=email)
+            for val in rs:
+                return cls(**val)
+            return None
         return None
 
     @classmethod

@@ -232,7 +232,14 @@ class TestUser(unittest.TestCase):
             x.delete()
 
     def test_load_by_id(self):
-        self.assertEqual(self.predefined[0], models.User.load(user_id='user'))
+        user = self.predefined[0]
+        self.assertEqual(user, models.User.load(user_id=user.user_id))
+        self.assertEqual(None, models.User.load(user_id='noSuchUserId'))
+
+    def test_load_by_email(self):
+        user = self.predefined[0]
+        self.assertEqual(user, models.User.load(email=user.email))
+        self.assertEqual(None, models.User.load(email='noSuch@example.com'))
 
     def test_create_and_delete(self):
         user_id = 'userId'

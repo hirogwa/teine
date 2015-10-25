@@ -28,6 +28,24 @@ def unauthorized():
     return redirect(url_for('login'))
 
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if 'GET' == request.method:
+        if flask_login.current_user.is_authenticated():
+            return redirect(url_for('login'))
+        return render_template('signup.html')
+
+    if 'POST' == request.method:
+        args = request.form
+        try:
+            user = user_operations.signup(
+                args.get('username'), args.get('password'), args.get('email'))
+            flask_login.login_user(user)
+        except user_operations.SignUpValidationException as e:
+            raise e
+        return redirect(url_for('login'))
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'POST' == request.method:
