@@ -25,12 +25,12 @@ def create_table(table_name, hash_key, range_key=None,
     def generate_index(idx):
         if len(idx) == 1:
             return GlobalAllIndex(
-                '{}-index'.format(idx[0]),
+                _index_name(*idx),
                 parts=[HashKey(idx[0])],
                 throughput=default_throughput)
         if len(idx) == 2:
             return GlobalAllIndex(
-                '{}-{}-index'.format(idx[0], idx[1]),
+                _index_name(*idx),
                 parts=[HashKey(idx[0]), RangeKey(idx[1])],
                 throughput=default_throughput)
         raise ValueError
@@ -72,9 +72,13 @@ def get_item(table_name, **kwargs):
     return table.get_item(**kwargs)
 
 
-def query(table_name, **kwargs):
+def query(table_name, hash_value, primary_hash_key=None, index_hash_key=None):
     table = Table(_table_name(table_name), connection=conn)
-    return table.query_2(**kwargs)
+    cond = {
+        'index': _index_name(index_hash_key) if index_hash_key else None,
+        '{}__eq'.format(primary_hash_key or index_hash_key): hash_value
+    }
+    return table.query_2(**cond)
 
 
 def scan(table_name, **kwargs):
@@ -89,3 +93,10 @@ def delete(table_name, **kwargs):
 
 def _table_name(name):
     return '{}{}'.format(table_prefix, name)
+
+
+def _index_name(*args):
+    result = 'index'
+    for key in args:
+        result = '{}-{}'.format(key, result)
+    return result

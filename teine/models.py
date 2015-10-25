@@ -1,7 +1,7 @@
 import datetime
 import uuid
 
-from teine import dynamo, settings
+from teine import dynamo
 
 
 class Show():
@@ -31,7 +31,7 @@ class Show():
         Sets up a new in-memory 'Show' by accessing database for
         an existing show_id
         """
-        rs = dynamo.query(cls.table_name, show_id__eq=show_id)
+        rs = dynamo.query(cls.table_name, show_id, 'show_id')
         for val in rs:
             return cls(**val)
         return None
@@ -138,7 +138,7 @@ class Episode():
         Sets up a new in-memory 'Episode' by accessing database for
         an existing episode_id
         """
-        rs = dynamo.query(cls.table_name, episode_id__eq=episode_id)
+        rs = dynamo.query(cls.table_name, episode_id, 'episode_id')
         for val in rs:
             kwargs = cls._convert_links(val)
             return cls(**kwargs)
@@ -259,7 +259,7 @@ class Media():
         Sets up a new in-memory 'Media' by accessing database for
         an existing media_id
         """
-        rs = dynamo.query(cls.table_name, media_id__eq=media_id)
+        rs = dynamo.query(cls.table_name, media_id, 'media_id')
         for val in rs:
             return Media(**val)
         return None
@@ -331,7 +331,7 @@ class Photo():
         Sets up a new in-memory 'Photo' by accessing database for
         an existing photo_id
         """
-        rs = dynamo.query(cls.table_name, photo_id__eq=photo_id)
+        rs = dynamo.query(cls.table_name, photo_id, 'photo_id')
         for val in rs:
             return cls(**val)
         return None
@@ -395,7 +395,7 @@ class Personality():
         Sets up a new in-memory 'Personality' by accessing database for
         an existing personality_id
         """
-        rs = dynamo.query(cls.table_name, personality_id__eq=personality_id)
+        rs = dynamo.query(cls.table_name, personality_id, 'personality_id')
         for val in rs:
             return cls(**val)
         return None
@@ -405,9 +405,8 @@ class Personality():
         """
         Like the 'load' method, but by twitter information instead of id
         """
-        rs = dynamo.query(cls.table_name,
-                          index='twitter_screen_name-index',
-                          twitter_screen_name__eq=screen_name)
+        rs = dynamo.query(cls.table_name, screen_name,
+                          index_hash_key='twitter_screen_name')
         for val in rs:
             return Personality(**val)
         return None
@@ -482,15 +481,15 @@ class User():
         either by user_id or email
         """
         if user_id:
-            rs = dynamo.query(cls.table_name, user_id__eq=user_id)
+            rs = dynamo.query(cls.table_name, user_id,
+                              primary_hash_key='user_id')
             for val in rs:
                 return cls(**val)
             return None
 
         if email:
-            rs = dynamo.query(cls.table_name,
-                              index='email-index',
-                              email__eq=email)
+            rs = dynamo.query(cls.table_name, email,
+                              index_hash_key='email')
             for val in rs:
                 return cls(**val)
             return None
