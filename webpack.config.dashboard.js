@@ -3,7 +3,8 @@ var webpack = require('webpack');
 
 module.exports = {
     entry: {
-        dashboard: "./teine/static/dashboard-assets.js"
+        dashboard: "./teine/static/dashboard-assets.js",
+        account: "./teine/static/account-assets.js"
     },
     output: {
         path: __dirname + '/teine/static',
