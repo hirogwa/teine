@@ -3,10 +3,10 @@ var webpack = require('webpack');
 
 module.exports = {
     entry: {
-        dashboard: "./static/dashboard-assets.js"
+        dashboard: "./teine/static/dashboard-assets.js"
     },
     output: {
-        path: __dirname + '/static',
+        path: __dirname + '/teine/static',
         filename: "[name]-bundle.js"
     },
     resolve: {
