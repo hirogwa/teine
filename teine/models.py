@@ -468,8 +468,6 @@ class User():
         self.first_name = first_name
         self.last_name = last_name
 
-        # TODO this should probably belong somewhere else.
-        # this is User "account" class
         self.show_ids = show_ids
 
         self._is_authenticated = True
