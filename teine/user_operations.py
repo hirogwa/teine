@@ -1,4 +1,5 @@
 import hashlib
+import re
 from teine import models, settings
 
 
@@ -33,15 +34,27 @@ def update(user_id, first_name, last_name, email, show_ids):
 
 
 def signup(user_id, password, email, first_name='', last_name=''):
+    _validateInputOrRaise(password, email)
+    _checkDuplicateOrRaise(user_id, email)
+
+    return models.User.create(
+        user_id, _hash(password), email, first_name, last_name).save()
+
+
+def _validateInputOrRaise(password, email):
+    if len(password) < settings.PASSWORD_MIN_LENGTH:
+        raise SignUpValidationException('password too short')
+    if not re.match('[^@]+@[^@]+\.[^@]', email):
+        raise SignUpValidationException('invalid email format')
+
+
+def _checkDuplicateOrRaise(user_id, email):
     if get_by_id(user_id):
         raise SignUpValidationException(
             'user_id already exists: {}'.format(user_id))
     if get_by_email(email):
         raise SignUpValidationException(
             'email already registered: {}'.format(email))
-
-    return models.User.create(
-        user_id, _hash(password), email, first_name, last_name).save()
 
 
 def _salt(s):

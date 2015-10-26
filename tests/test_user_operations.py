@@ -69,13 +69,25 @@ class TestUserOperations(unittest.TestCase):
         self.assertTrue(mock_user_create.called)
         user.save.assert_called_with()
 
+    def test_signup_short_password(self):
+        with self.assertRaises(user_operations.SignUpValidationException):
+            user_operations.signup('userId', 'p', 'email@example.com')
+
+    def test_signup_badly_formatted_email(self):
+        with self.assertRaises(user_operations.SignUpValidationException):
+            user_operations.signup('userId', 'password01', 'no.at.example.com')
+
+        with self.assertRaises(user_operations.SignUpValidationException):
+            user_operations.signup('userId', 'password01', 'no.dot@com')
+
     @mock.patch.object(user_operations, 'get_by_id')
     def test_signup_duplicate_user_id(self, mock_get_by_id):
         user = self.predefined[0]
         mock_get_by_id.return_value = user
 
         with self.assertRaises(user_operations.SignUpValidationException):
-            user_operations.signup(user.user_id, 'pass01', 'some@email.com')
+            user_operations.signup(
+                user.user_id, 'password01', 'some@email.com')
         mock_get_by_id.assert_called_with(user.user_id)
 
     @mock.patch.object(user_operations, 'get_by_id')
@@ -87,6 +99,6 @@ class TestUserOperations(unittest.TestCase):
         new_user_id = 'someUserId'
 
         with self.assertRaises(user_operations.SignUpValidationException):
-            user_operations.signup(new_user_id, 'pass01', user.email)
+            user_operations.signup(new_user_id, 'password01', user.email)
         mock_get_by_id.assert_called_with(new_user_id)
         mock_get_by_email.assert_called_with(user.email)
