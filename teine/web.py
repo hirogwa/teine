@@ -35,6 +35,33 @@ def signup():
             return redirect(url_for('login'))
         return render_template('signup.html')
 
+
+@app.route('/user', methods=['GET', 'PUT', 'POST'])
+def user():
+    if 'GET' == request.method:
+        if flask_login.current_user.is_authenticated:
+            return json_response({
+                'result': 'success',
+                'user': flask_login.current_user.export()
+            })
+        else:
+            return flask_login.current_app.login_manager.unauthorized()
+
+    if 'PUT' == request.method:
+        if flask_login.current_user.is_authenticated:
+            args = request.get_json()
+            if flask_login.current_user.user_id == args.get('user_id'):
+                user = user_operations.update(**args)
+                return json_response({
+                    'result': 'success',
+                    'user': user.export()
+                })
+            else:
+                # someone else's profile
+                raise ValueError
+        else:
+            return flask_login.current_app.login_manager.unauthorized()
+
     if 'POST' == request.method:
         args = request.form
         try:
@@ -102,27 +129,6 @@ def page_profile():
     kwargs = dashboard_template_args(sidebar_profile='active')
     kwargs['user_id'] = flask_login.current_user.user_id
     return render_template('dashboard-profile.html', **kwargs)
-
-
-@app.route('/profile-data', methods=['GET', 'POST'])
-@flask_login.login_required
-def profile():
-    if 'GET' == request.method:
-        return json_response({
-            'result': 'success',
-            'user': flask_login.current_user.export()
-        })
-    if 'POST' == request.method:
-        args = request.get_json()
-        if flask_login.current_user.user_id == args.get('user_id'):
-            user = user_operations.update(**args)
-            return json_response({
-                'result': 'success',
-                'user': user.export()
-            })
-        else:
-            # someone else's profile
-            raise ValueError
 
 
 @app.route('/show', methods=['GET', 'POST', 'PUT'])
