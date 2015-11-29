@@ -32,7 +32,7 @@ def unauthorized():
 def signup():
     if 'GET' == request.method:
         if flask_login.current_user.is_authenticated():
-            return redirect(url_for('login'))
+            return _redirect_to_home()
         return render_template('signup.html')
 
 
@@ -63,14 +63,17 @@ def user():
             return flask_login.current_app.login_manager.unauthorized()
 
     if 'POST' == request.method:
-        args = request.form
+        args = request.get_json()
+        user = None
         try:
             user = user_operations.signup(
-                args.get('username'), args.get('password'), args.get('email'))
+                args.get('user_id'), args.get('password'), args.get('email'))
             flask_login.login_user(user)
         except user_operations.SignUpValidationException as e:
             raise e
-        return redirect(url_for('login'))
+        return json_response({
+            'user': user.export()
+        })
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -85,7 +88,7 @@ def login():
 
     if 'GET' == request.method:
         if flask_login.current_user.is_authenticated():
-            return redirect(url_for('dashboard'))
+            return _redirect_to_home()
         return render_template('login.html')
 
 
@@ -449,3 +452,10 @@ def sanitized_json(d):
 def json_response(data):
     return Response(
         json.dumps(sanitized_json(data)), mimetype='application/json')
+
+
+def _redirect_to_home():
+    '''
+    Redirects to the "home" page when logged in
+    '''
+    return redirect(url_for('page_profile'))
