@@ -18,7 +18,7 @@ def get_by_email(email):
 
 def get_by_credentials(user_id, password):
     user = models.User.load(user_id=user_id)
-    return user if user.password == _hash(password) else None
+    return user if user and user.password == _hash(password) else None
 
 
 def update(user_id, first_name, last_name, email, show_ids):

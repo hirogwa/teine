@@ -1,5 +1,5 @@
 var User = Backbone.Model.extend({
-    url: '/profile-data',
+    url: '/user',
 
     parse: function(data) {
         var user = data.user;
