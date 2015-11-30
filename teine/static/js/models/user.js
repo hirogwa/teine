@@ -10,6 +10,28 @@ var User = Backbone.Model.extend({
             email: user.email,
             show_ids: user.show_ids
         };
+    },
+
+    checkSignupValidity: function() {
+        var self = this;
+        return new Promise(function(resolve, reject) {
+            $.ajax({
+                url: '/validate-signup-entry',
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    user_id: self.get('user_id') || '',
+                    email: self.get('email') || '',
+                    password: self.get('password') || ''
+                },
+                success: function(data) {
+                    resolve(data);
+                },
+                error: function(data) {
+                    reject(data);
+                }
+            });
+        });
     }
 });
 

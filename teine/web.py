@@ -69,15 +69,35 @@ def user():
             user = user_operations.signup(
                 args.get('user_id'), args.get('password'), args.get('email'))
             flask_login.login_user(user)
-            return {
+            return json_response({
                 'result': 'success',
                 'user': user.export()
-            }
+            })
         except user_operations.SignUpValidationException as e:
             return {
                 'result': 'error',
                 'message': e.message
             }, 500
+
+
+@app.route('/validate-signup-entry', methods=['POST'])
+def validateSignupEntry():
+    if 'POST' == request.method:
+        args = request.form
+        try:
+            user_operations.validateSignupEntryOrRaise(
+                args.get('user_id'),
+                args.get('password'),
+                args.get('email'))
+            return json_response({
+                'result': 'success'
+            })
+
+        except user_operations.SignUpValidationException as e:
+            return json_response({
+                'result': 'error',
+                'message': e.message
+            })
 
 
 @app.route('/login', methods=['GET', 'POST'])
