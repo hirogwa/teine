@@ -48,17 +48,27 @@ var UserSignupView = Backbone.View.extend({
             return;
         }
 
-        new models.User({
+        var user = new models.User({
             user_id: user_id,
             email: email,
             password: password
-        }).save(null, {
-            success: function(model, response) {
-                window.location = '/profile';
-            },
-            error: function(model, xhr) {
-                notify.error();
+        });
+
+        user.checkSignupValidity().then(function(result) {
+            if (result.result === 'success') {
+                user.save(null, {
+                    success: function(model, response) {
+                        window.location = '/profile';
+                    },
+                    error: function(model, xhr) {
+                        notify.error();
+                    }
+                });
+            } else {
+                notify.error(result.message);
             }
+        }, function(reason) {
+            notify.error();
         });
     }
 });

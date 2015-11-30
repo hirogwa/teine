@@ -34,18 +34,23 @@ def update(user_id, first_name, last_name, email, show_ids):
 
 
 def signup(user_id, password, email, first_name='', last_name=''):
-    _validateInputOrRaise(password, email)
-    _checkDuplicateOrRaise(user_id, email)
-
+    validateSignupEntryOrRaise(user_id, password, email)
     return models.User.create(
         user_id, _hash(password), email, first_name, last_name).save()
 
 
-def _validateInputOrRaise(password, email):
-    if len(password) < settings.PASSWORD_MIN_LENGTH:
-        raise SignUpValidationException('password too short')
+def validateSignupEntryOrRaise(user_id, password, email):
+    _validateInputOrRaise(user_id, password, email)
+    _checkDuplicateOrRaise(user_id, email)
+
+
+def _validateInputOrRaise(user_id, password, email):
+    if len(user_id) < 1:
+        raise SignUpValidationException('user_id empty')
     if not re.match('[^@]+@[^@]+\.[^@]', email):
         raise SignUpValidationException('invalid email format')
+    if len(password) < settings.PASSWORD_MIN_LENGTH:
+        raise SignUpValidationException('password too short')
 
 
 def _checkDuplicateOrRaise(user_id, email):
