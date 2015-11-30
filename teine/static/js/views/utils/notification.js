@@ -39,6 +39,13 @@ var notify = {
         return this.notify(options);
     },
 
+    warn: function(message, args) {
+        var options = args || {};
+        options.message = message;
+        options.type = 'warning';
+        return this.notify(options);
+    },
+
     error: function(message, args) {
         var options = args || {};
         options.message =

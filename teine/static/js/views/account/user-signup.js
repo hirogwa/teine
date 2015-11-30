@@ -31,10 +31,27 @@ var UserSignupView = Backbone.View.extend({
     },
 
     signup: function() {
+        var user_id = $('#input-user-name').val();
+        var email = $('#input-email').val();
+        var password = $('#input-password').val();
+
+        if (!user_id) {
+            notify.warn('Please enter username');
+            return;
+        }
+        if (!email) {
+            notify.warn('Please enter email address');
+            return;
+        }
+        if (!password) {
+            notify.warn('Password is required');
+            return;
+        }
+
         new models.User({
-            user_id: $('#input-user-name').val(),
-            email: $('#input-email').val(),
-            password: $('#input-password').val()
+            user_id: user_id,
+            email: email,
+            password: password
         }).save(null, {
             success: function(model, response) {
                 window.location = '/profile';
