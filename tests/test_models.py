@@ -87,6 +87,18 @@ class TestEpisode(unittest.TestCase):
             title='title01',
             summary='summary01',
             description='description01'))
+        cls.predefined.append(models.Episode(
+            episode_id='episode02',
+            show_id='show01',
+            title='title02',
+            summary='summary02',
+            description='description02'))
+        cls.predefined.append(models.Episode(
+            episode_id='episode03',
+            show_id='show02',
+            title='title03',
+            summary='summary03',
+            description='description03'))
         for x in cls.predefined:
             x.save()
 
@@ -107,6 +119,16 @@ class TestEpisode(unittest.TestCase):
         a = self.predefined[0]
         b = models.Episode.load(a.episode_id)
         self.assertEqual(a, b)
+
+    def test_load_all(self):
+        episodes_from01 = models.Episode.load_all('show01')
+        self.assertEqual(2, len(episodes_from01))
+
+        episodes_from02 = models.Episode.load_all('show02')
+        self.assertEqual(1, len(episodes_from02))
+
+        episodes_from03 = models.Episode.load_all('show03')
+        self.assertEqual(0, len(episodes_from03))
 
     def test_create_and_delete(self):
         links = [models.Link(url='http://someurl01.com',
