@@ -140,21 +140,21 @@ class Episode():
         """
         rs = dynamo.query(cls.table_name, episode_id, 'episode_id')
         for val in rs:
-            kwargs = cls._convert_links(val)
-            return cls(**kwargs)
+            return cls._adjust_db_data(val)
         return None
 
     @classmethod
-    def load_all(cls, show_id=None):
+    def _adjust_db_data(cls, rs):
+        return cls(**(cls._convert_links(rs)))
+
+    @classmethod
+    def load_all(cls, show_id):
         """
         Returns the list of all Episodes belonging to the passed show_id
-        TODO show_id??
         """
-        rs = dynamo.scan(cls.table_name)
-
-        def adjust(val):
-            return Episode(**(cls._convert_links(val)))
-        return [adjust(val) for val in rs]
+        rs = dynamo.scan(cls.table_name,
+                         show_id, 'show_id' if show_id else None)
+        return [cls._adjust_db_data(val) for val in rs]
 
     @classmethod
     def create(cls, episode_id, show_id, title='', summary='', description='',
