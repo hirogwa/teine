@@ -1,6 +1,6 @@
 import hashlib
 import re
-from teine import models, settings
+from teine import models, settings, show_operations
 
 
 class SignUpValidationException(Exception):
@@ -35,8 +35,10 @@ def update(user_id, first_name, last_name, email, show_ids):
 
 def signup(user_id, password, email, first_name='', last_name=''):
     validateSignupEntryOrRaise(user_id, password, email)
-    return models.User.create(
+    user = models.User.create(
         user_id, _hash(password), email, first_name, last_name).save()
+    show_operations.create_default(user)
+    return user
 
 
 def validateSignupEntryOrRaise(user_id, password, email):

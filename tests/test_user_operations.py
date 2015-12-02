@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 
-from teine import models, user_operations
+from teine import models, user_operations, show_operations
 
 
 class TestUserOperations(unittest.TestCase):
@@ -49,10 +49,12 @@ class TestUserOperations(unittest.TestCase):
             user_operations.update(user_id, 'f_name', 'l_name', 'email', [])
         models.User.load.assert_called_with(user_id)
 
+    @mock.patch.object(show_operations, 'create_default')
     @mock.patch.object(user_operations, 'get_by_email')
     @mock.patch.object(user_operations, 'get_by_id')
     @mock.patch.object(models.User, 'create')
-    def test_signup(self, mock_user_create, mock_get_by_id, mock_get_by_email):
+    def test_signup(self, mock_user_create, mock_get_by_id, mock_get_by_email,
+                    mock_default_show_create):
         mock_get_by_id.return_value = None
         mock_get_by_email.return_value = None
         user = models.User('userId', 'hashedPass', 'some@example.com',
@@ -68,6 +70,7 @@ class TestUserOperations(unittest.TestCase):
 
         self.assertTrue(mock_user_create.called)
         user.save.assert_called_with()
+        mock_default_show_create.assert_called_with(user)
 
     def test_signup_short_password(self):
         with self.assertRaises(user_operations.SignUpValidationException):
