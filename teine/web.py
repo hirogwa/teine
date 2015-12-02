@@ -271,9 +271,10 @@ def episode():
 @flask_login.login_required
 def episodes():
     if 'GET' == request.method:
+        show = show_operations.get_by_id(
+            flask_login.current_user.primary_show_id())
         return json_response(map(
-            lambda x: {'episode': x.export()},
-            flask_login.current_user.primary_show_id()))
+            lambda x: {'episode': x.export()}, show.episodes()))
 
 
 @app.route('/media/list', methods=['GET'])
