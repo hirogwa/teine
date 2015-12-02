@@ -17,6 +17,7 @@ class TestShowOperations(unittest.TestCase):
                        last_name='LastName',
                        email='testuser@somedomain.com',
                        show_ids=['show01', 'show02'])
+    user.save = mock.MagicMock(return_value=user)
 
     @classmethod
     def setUpClass(cls):
@@ -99,6 +100,13 @@ class TestShowOperations(unittest.TestCase):
         self.assertEqual(expected.show_host_ids, actual.show_host_ids)
         self.assertEqual(expected.image_id, actual.image_id)
         self.assertEqual(expected.language, actual.language)
+
+    @mock.patch.object(show_operations, 'create')
+    def test_create_default(self, mock_show_create):
+        show_operations.create_default(self.user)
+        mock_show_create.assert_called_with(
+            self.user, title=show_operations.DEFAULT_SHOW_TITLE,
+            author=self.user.user_id)
 
     @mock.patch.object(models.Show, 'load')
     @mock.patch.object(operations_common, 'host_ids')
