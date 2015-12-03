@@ -9,7 +9,7 @@ def host_ids(show_id, people):
     creating the host entites if necessary
     '''
     def find_personality_or_create(show_id, screen_name, name, description,
-                                   profile_image_url):
+                                   profile_image_url, **kwargs):
         p = models.Personality.find_by_twitter(screen_name, show_id)
         if p:
             return p

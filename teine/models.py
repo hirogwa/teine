@@ -123,7 +123,7 @@ class Episode():
         self.media_id = media_id
         self._media = None
         self.guest_ids = guest_ids
-        self._guests = []
+        self.guests = []
         self.links = links
         self.status = status
 
@@ -188,6 +188,9 @@ class Episode():
             ret['media'] = Media.load(
                 self.media_id).export() if self.media_id else None
         if 'guests' in expand:
+            if not self.guests:
+                self.guests = map(
+                    lambda x: Personality.load(x), self.guest_ids)
             ret['guests'] = list(map(lambda x: x.export(), self.guests))
         if 'links' in expand:
             ret['links'] = list(map(lambda x: x.export(), self.links))

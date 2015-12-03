@@ -12,7 +12,7 @@ def get_by_show(show_id):
 
 
 def update(episode_id, title='', summary='', description='', media_id=None,
-           guests=[], links=[], status=None):
+           guests=[], links=[], status=None, **kwargs):
     ep = models.Episode.load(episode_id)
     if not ep:
         raise ValueError
