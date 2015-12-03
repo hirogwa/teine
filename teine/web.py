@@ -190,7 +190,7 @@ def show():
 @app.route('/episode/new', methods=['GET'])
 @flask_login.login_required
 def page_create_episode():
-    return page_episode(show_id=flask_login.current_user.get_show_id())
+    return page_episode(show_id=flask_login.current_user.primary_show_id())
 
 
 @app.route('/episode/copy/<episode_id>', methods=['GET'])
@@ -235,8 +235,7 @@ def dashboard_template_args(**kwargs):
 @flask_login.login_required
 def episode():
     if 'POST' == request.method:
-        ep = episode_operations.create(
-            flask_login.current_user, request.get_json())
+        ep = episode_operations.create(**request.get_json())
         return json_response({
             'message': 'episode created',
             'result': 'success',
@@ -244,8 +243,7 @@ def episode():
         })
 
     if 'PUT' == request.method:
-        ep = episode_operations.update(
-            flask_login.current_user, request.get_json())
+        ep = episode_operations.update(**request.get_json())
         return json_response({
             'message': 'episode updated',
             'result': 'success',
@@ -256,7 +254,7 @@ def episode():
         ep = episode_operations.get_by_id(request.args['episode_id'])
         return json_response({
             'result': 'success',
-            'episode': ep.export()
+            'episode': ep.export(expand=['media', 'guests', 'links'])
         })
 
     if 'DELETE' == request.method:
