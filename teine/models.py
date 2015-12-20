@@ -380,7 +380,7 @@ class Photo():
 class Personality():
     table_name = 'Personality'
     hash_key = 'personality_id'
-    secondary_indexes = [('twitter_screen_name',)]
+    secondary_indexes = [('show_id', 'twitter_screen_name',)]
 
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
@@ -408,7 +408,8 @@ class Personality():
         """
         Like the 'load' method, but by twitter information instead of id
         """
-        rs = dynamo.query(cls.table_name, 'twitter_screen_name', screen_name)
+        rs = dynamo.query(cls.table_name, 'show_id', show_id,
+                          'twitter_screen_name', screen_name)
         for val in rs:
             return Personality(**val)
         return None
