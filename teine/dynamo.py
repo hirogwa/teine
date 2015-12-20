@@ -72,13 +72,62 @@ def get_item(table_name, **kwargs):
     return table.get_item(**kwargs)
 
 
-def query(table_name, hash_value, primary_hash_key=None, index_hash_key=None):
+def _describe_table(table):
+    # NOTE: Table.describe() changes table.schema,
+    # causing an error when querying a hash-only table
+    return Table(table.table_name, connection=conn).describe().get('Table')
+
+
+def query(table_name, partition_key, partition_value, sort_key=None,
+          sort_value=None, sort_key_condition='eq'):
+    '''
+    :param sort_key_condition:
+    '''
     table = Table(_table_name(table_name), connection=conn)
     cond = {
-        'index': _index_name(index_hash_key) if index_hash_key else None,
-        '{}__eq'.format(primary_hash_key or index_hash_key): hash_value
+        '{}__eq'.format(partition_key): partition_value,
     }
-    return table.query_2(**cond)
+    if sort_key:
+        cond['{}__{}'.format(sort_key, sort_key_condition)] = sort_value
+
+    table_description = _describe_table(table)
+    attributes = [partition_key, sort_key] if sort_key else [partition_key]
+
+    # query made against the primary partition key
+    if _matches_primary_partition_key(table_description, attributes):
+        return table.query_2(**cond)
+
+    # query made against secondary indexes
+    index = _find_matching_secondary_index(table_description, attributes)
+    if index:
+        cond['index'] = index
+        return table.query_2(**cond)
+
+    raise ValueError('Keys do not match those defined in the table. {}, {}'
+                     .format(partition_key, sort_key))
+
+
+def _matches_primary_partition_key(table_description, attributes):
+    return attributes == list(map(
+        lambda x: x.get('AttributeName'), table_description.get('KeySchema')))
+
+
+def _find_matching_secondary_index(table_description, attributes):
+    '''
+    :param table_description: output of Table.describe()
+    :param attributes: list of attributes to match for an index
+    '''
+    indexes = table_description.get('GlobalSecondaryIndexes')
+    if not indexes:
+        return None
+
+    def _matches_index(param):
+        key_schema = param.get('KeySchema')
+        return attributes == list(map(
+            lambda x: x.get('AttributeName'), key_schema))
+
+    filtered = list(filter(lambda x: _matches_index(x), indexes))
+    return filtered[0].get('IndexName') if len(filtered) > 0 else None
 
 
 def scan(table_name, hash_value=None, primary_hash_key=None):
