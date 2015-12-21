@@ -1,3 +1,4 @@
+from unittest import mock
 import inspect
 import time
 import unittest
@@ -44,35 +45,46 @@ class TestShow(unittest.TestCase):
             image_id='image01',
             language='ja'))
 
-        for x in cls.predefined:
-            x.save()
+    @mock.patch('teine.dynamo.query')
+    def test_load(self, mocked_query):
+        expected = self.predefined[0]
+        mocked_query.return_value = [{
+            'show_id': expected.show_id,
+            'owner_user_id': expected.owner_user_id,
+            'title': expected.title,
+            'author': expected.author,
+            'tagline': expected.tagline,
+            'description': expected.description,
+            'show_host_ids': expected.show_host_ids,
+            'image_id': expected.image_id,
+            'language': expected.language
+        }]
+        actual = models.Show.load(expected.show_id)
+        mocked_query.assert_called_with(
+            models.Show.table_name, 'show_id', expected.show_id)
+        self.assertEqual(expected, actual)
 
-    @classmethod
-    def tearDownClass(cls):
-        for x in cls.predefined:
-            x.delete()
+    def test_create(self):
+        show = self.predefined[0]
+        result = models.Show.create(
+            show.show_id, show.owner_user_id, show.title, show.author,
+            show.tagline, show.description, show.show_host_ids, show.image_id,
+            show.language)
+        self.assertEqual(show, result)
 
-    def test_load(self):
-        a = self.predefined[0]
-        b = models.Show.load(a.show_id)
-        self.assertEqual(a, b)
+    @mock.patch('teine.dynamo.update')
+    def test_save(self, mocked_update):
+        show = self.predefined[0]
+        result = show.save()
+        mocked_update.assert_called_with(show.table_name, show.export())
+        self.assertEqual(show, result)
 
-    def test_create_and_delete(self):
-        a = models.Show.create(
-            show_id='someShowId',
-            owner_user_id='someUser',
-            title='someTitle',
-            author='someAuthor',
-            tagline='someTagline',
-            description='someDesc',
-            show_host_ids=[],
-            image_id='someImage',
-            language='en-us')
-        a.save()
-        self.assertIsNotNone(models.Show.load(a.show_id))
-
-        a.delete()
-        self.assertIsNone(models.Show.load(a.show_id))
+    @mock.patch('teine.dynamo.delete')
+    def test_delete(self, mocked_delete):
+        show = self.predefined[0]
+        result = show.delete()
+        mocked_delete.assert_called_with(show.table_name, show_id=show.show_id)
+        self.assertTrue(result)
 
 
 class TestEpisode(unittest.TestCase):
