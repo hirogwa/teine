@@ -111,57 +111,70 @@ class TestEpisode(unittest.TestCase):
             title='title03',
             summary='summary03',
             description='description03'))
-        for x in cls.predefined:
-            x.save()
 
         cls.predefined_media = models.Media.create(
             owner_user_id='user01',
             name='name01')
 
-        cls.predefined_media.save()
+    @mock.patch('teine.dynamo.query')
+    def test_load(self, mocked_query):
+        episode = self.predefined[0]
+        mocked_query.return_value = [{
+            'episode_id': episode.episode_id,
+            'show_id': episode.show_id,
+            'title': episode.title,
+            'summary': episode.summary,
+            'description': episode.description
+        }]
+        result = models.Episode.load(episode.episode_id)
+        self.assertEqual(episode, result)
+        mocked_query.assert_called_with(
+            episode.table_name, 'episode_id', episode.episode_id)
 
-    @classmethod
-    def tearDownClass(cls):
-        for x in cls.predefined:
-            x.delete()
+    @mock.patch('teine.dynamo.scan')
+    def test_load_all(self, mocked_scan):
+        episodes = self.predefined[:2]
+        mocked_scan.return_value = [{
+            'episode_id': episodes[0].episode_id,
+            'show_id': episodes[0].show_id,
+            'title': episodes[0].title,
+            'summary': episodes[0].summary,
+            'description': episodes[0].description
+        }, {
+            'episode_id': episodes[1].episode_id,
+            'show_id': episodes[1].show_id,
+            'title': episodes[1].title,
+            'summary': episodes[1].summary,
+            'description': episodes[1].description
+        }]
+        result = models.Episode.load_all(episodes[0].show_id)
+        self.assertEqual(episodes, result)
+        mocked_scan.assert_called_with(
+            episodes[0].table_name, episodes[0].show_id, 'show_id')
 
-        cls.predefined_media.delete()
+    def test_create(self):
+        episode = self.predefined[0]
+        result = models.Episode.create(
+            episode.episode_id, episode.show_id, episode.title,
+            episode.summary, episode.description, episode.media_id,
+            episode.guest_ids, episode.links, episode.status)
+        self.assertEqual(episode, result)
 
-    def test_load(self):
-        a = self.predefined[0]
-        b = models.Episode.load(a.episode_id)
-        self.assertEqual(a, b)
+    @mock.patch('teine.dynamo.update')
+    def test_save(self, mocked_update):
+        episode = self.predefined[0]
+        result = episode.save()
+        self.assertEqual(episode, result)
+        mocked_update.assert_called_with(
+            episode.table_name, episode.export(expand=['media', 'links']))
 
-    def test_load_all(self):
-        episodes_from01 = models.Episode.load_all('show01')
-        self.assertEqual(2, len(episodes_from01))
-
-        episodes_from02 = models.Episode.load_all('show02')
-        self.assertEqual(1, len(episodes_from02))
-
-        episodes_from03 = models.Episode.load_all('show03')
-        self.assertEqual(0, len(episodes_from03))
-
-    def test_create_and_delete(self):
-        links = [models.Link(url='http://someurl01.com',
-                             title='some link title 01'),
-                 models.Link(url='http://someurl02.com',
-                             title='some link title 02')]
-
-        a = models.Episode.create(episode_id='someEpisodeId',
-                                  show_id='someShow',
-                                  title='someTitle',
-                                  summary='someSummary',
-                                  description='someDescription',
-                                  media_id=self.predefined_media.media_id,
-                                  guest_ids=['someGuest', 'anotherGuest'],
-                                  links=links,
-                                  status='draft')
-        a.save()
-        self.assertIsNotNone(models.Episode.load(a.episode_id))
-
-        a.delete()
-        self.assertIsNone(models.Episode.load(a.episode_id))
+    @mock.patch('teine.dynamo.delete')
+    def test_delete(self, mocked_delete):
+        episode = self.predefined[0]
+        result = episode.delete()
+        self.assertTrue(result)
+        mocked_delete.assert_called_with(
+            episode.table_name, episode_id=episode.episode_id)
 
 
 class TestPhoto(unittest.TestCase):
