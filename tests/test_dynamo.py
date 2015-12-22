@@ -111,7 +111,6 @@ class TestOthers(unittest.TestCase):
 
     def test_query_primary_partition_key(self):
         table = self.tables['primary_partition']
-        result = dynamo.query(table['table'], 'id_01', table['key'])
         result = dynamo.query(table['table'], table['key'], 'id_01')
         val = result.next()
         self.assertEqual('id_01', val[table['key']])
