@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from teine import models, settings
 
@@ -15,7 +16,8 @@ def host_ids(show_id, people):
             return p
         else:
             return models.Personality.create_from_twitter(
-                show_id, screen_name, name, description, profile_image_url)
+                str(uuid.uuid4()), show_id, screen_name, name,
+                description, profile_image_url)
 
     return list(map(
         lambda x: find_personality_or_create(

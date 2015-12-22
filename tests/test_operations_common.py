@@ -57,10 +57,9 @@ class TestOperationsCommon(unittest.TestCase):
                                    mock_create_from_twitter):
         show_id = 'showId01'
         people = list(map(lambda x: {'twitter': x.twitter}, self.predefined))
-        expected = list(map(lambda x: x.personality_id, self.predefined))
 
-        def mock_personality(show_id, screen_name, name, description,
-                             profile_image_url):
+        def mock_personality(personality_id, show_id, screen_name, name,
+                             description, profile_image_url):
             filtered = list(filter(
                 lambda x:
                 x.show_id == show_id and
@@ -70,22 +69,23 @@ class TestOperationsCommon(unittest.TestCase):
                 x.twitter.get('profile_image_url') == profile_image_url,
                 self.predefined))
             if len(filtered) == 1:
-                return filtered[0]
+                result = filtered[0]
+                result.personality_id = personality_id
+                return result
             else:
                 raise ValueError
 
         mock_find_by_twitter.return_value = None
         mock_create_from_twitter.side_effect = mock_personality
 
-        actual = operations_common.host_ids(show_id, people)
-
-        self.assertEqual(expected, actual)
+        operations_common.host_ids(show_id, people)
 
         for i in range(len(self.predefined)):
             p = self.predefined[i]
-            models.Personality.find_by_twitter.assert_any_call(
+            mock_find_by_twitter.assert_any_call(
                 p.twitter.get('screen_name'), p.show_id)
-            models.Personality.create_from_twitter.assert_any_call(
+            mock_create_from_twitter.assert_any_call(
+                p.personality_id,
                 p.show_id, p.twitter.get('screen_name'), p.twitter.get('name'),
                 p.twitter.get('description'),
                 p.twitter.get('profile_image_url'))

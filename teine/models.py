@@ -412,17 +412,17 @@ class Personality():
         rs = dynamo.query(cls.table_name, 'show_id', show_id,
                           'twitter_screen_name', screen_name)
         for val in rs:
-            return Personality(**val)
+            return cls(**val)
         return None
 
     @classmethod
-    def create_from_twitter(cls, show_id, screen_name, name='', description='',
-                            profile_image_url=None):
+    def create_from_twitter(cls, personality_id, show_id, screen_name,
+                            name='', description='', profile_image_url=None):
         """
         Constructs an (unsaved) 'Personality' instance.
         To persist the data, you need to call 'Personality.save'
         """
-        return cls(personality_id=str(uuid.uuid4()),
+        return cls(personality_id=personality_id,
                    show_id=show_id,
                    twitter={'screen_name': screen_name,
                             'name': name,
@@ -453,7 +453,7 @@ class Personality():
         Deletes this Personality from database
         '''
         dynamo.delete(self.table_name, personality_id=self.personality_id)
-        return self
+        return True
 
 
 class User():

@@ -261,38 +261,57 @@ class TestPersonality(unittest.TestCase):
     def setUpClass(cls):
         cls.predefined.append(models.Personality(
             personality_id='personality01',
-            show_id='show01'))
+            show_id='show01',
+            twitter={
+                'screen_name': 'some_test_screen_name',
+                'name': 'some_test_name',
+                'description': 'some_test_desc',
+                'profile_image_url': 'some_test_url'
+            }))
 
-        for x in cls.predefined:
-            x.save()
+    @mock.patch('teine.dynamo.query')
+    def test_load(self, mocked_query):
+        personality = self.predefined[0]
+        mocked_query.return_value = [personality.export()]
+        result = models.Personality.load(personality.personality_id)
+        self.assertEqual(personality, result)
+        mocked_query.assert_called_with(
+            personality.table_name, 'personality_id',
+            personality.personality_id)
 
-    @classmethod
-    def tearDownClass(cls):
-        for x in cls.predefined:
-            x.delete()
+    @mock.patch('teine.dynamo.query')
+    def test_find_by_twitter(self, mocked_query):
+        personality = self.predefined[0]
+        mocked_query.return_value = [personality.export()]
+        result = models.Personality.find_by_twitter(
+            personality.twitter_screen_name, personality.show_id)
+        self.assertEqual(personality, result)
+        mocked_query.assert_called_with(
+            personality.table_name, 'show_id', personality.show_id,
+            'twitter_screen_name', personality.twitter_screen_name)
 
-    def test_load(self):
-        a = self.predefined[0]
-        b = models.Personality.load(a.personality_id)
-        self.assertEqual(a, b)
+    def test_create_from_twitter(self):
+        personality = self.predefined[0]
+        result = models.Personality.create_from_twitter(
+            personality.personality_id, personality.show_id,
+            **personality.twitter)
+        self.assertEqual(personality, result)
 
-    def test_create_from_and_find_by_twitter(self):
-        screen_name = 'testHirogwa'
-        show_id = 'someShow'
+    @mock.patch('teine.dynamo.update')
+    def test_save(self, mocked_update):
+        personality = self.predefined[0]
+        result = personality.save()
+        self.assertEqual(personality, result)
+        mocked_update.assert_called_with(
+            personality.table_name, personality.export())
 
-        a = models.Personality.create_from_twitter(
-            screen_name=screen_name,
-            show_id=show_id,
-            name='Mr. Random',
-            description='some random guy',
-            profile_image_url='https://some.url.com/someImage.png')
-        a.save()
-        self.assertEqual(a, models.Personality.find_by_twitter(
-            screen_name, show_id))
-
-        a.delete()
-        self.assertIsNone(models.Personality.find_by_twitter(
-            screen_name, show_id))
+    @mock.patch('teine.dynamo.delete')
+    def test_delete(self, mocked_delete):
+        personality = self.predefined[0]
+        result = personality.delete()
+        self.assertTrue(result)
+        mocked_delete.assert_called_with(
+            personality.table_name, personality_id=personality.personality_id)
 
 
 class TestUser(unittest.TestCase):
