@@ -187,33 +187,71 @@ class TestPhoto(unittest.TestCase):
             owner_user_id='user01',
             thumbnail_id='thumbnail01',
             filename='filename01'))
+        cls.predefined.append(models.Photo(
+            photo_id='photo02',
+            owner_user_id='user01',
+            thumbnail_id='thumbnail02',
+            filename='filename02'))
+        cls.predefined.append(models.Photo(
+            photo_id='photo03',
+            owner_user_id='user02',
+            thumbnail_id='thumbnail03',
+            filename='filename03'))
 
-        for x in cls.predefined:
-            x.save()
+    @mock.patch('teine.dynamo.query')
+    def test_load(self, mocked_query):
+        photo = self.predefined[0]
+        mocked_query.return_value = [{
+            'photo_id': photo.photo_id,
+            'owner_user_id': photo.owner_user_id,
+            'thumbnail_id': photo.thumbnail_id,
+            'filename': photo.filename
+        }]
+        result = models.Photo.load(photo.photo_id)
+        self.assertEqual(photo, result)
+        mocked_query.assert_called_with(
+            photo.table_name, 'photo_id', photo.photo_id)
 
-    @classmethod
-    def tearDownClass(cls):
-        for x in cls.predefined:
-            x.delete()
+    @mock.patch('teine.dynamo.scan')
+    def test_load_all(self, mocked_scan):
+        photos = self.predefined[:2]
+        mocked_scan.return_value = [{
+            'photo_id': photos[0].photo_id,
+            'owner_user_id': photos[0].owner_user_id,
+            'thumbnail_id': photos[0].thumbnail_id,
+            'filename': photos[0].filename
+        }, {
+            'photo_id': photos[1].photo_id,
+            'owner_user_id': photos[1].owner_user_id,
+            'thumbnail_id': photos[1].thumbnail_id,
+            'filename': photos[1].filename
+        }]
+        result = models.Photo.load_all(photos[0].owner_user_id)
+        self.assertEqual(photos, list(result))
+        mocked_scan.assert_called_with(
+            photos[0].table_name, photos[0].owner_user_id, 'owner_user_id')
 
-    def test_laod(self):
-        a = self.predefined[0]
-        b = models.Photo.load(a.photo_id)
-        self.assertEqual(a, b)
+    def test_create(self):
+        photo = self.predefined[0]
+        result = models.Photo.create(
+            photo_id=photo.photo_id, owner_user_id=photo.owner_user_id,
+            thumbnail_id=photo.thumbnail_id, filename=photo.filename)
+        self.assertEqual(photo, result)
 
-    def test_create_and_delete(self):
-        a = models.Photo.create(
-            owner_user_id='someUser',
-            thumbnail_id='someThumbnail',
-            filename='someFileName',
-            size=3141592,
-            content_type='image/jpeg')
-        a.save()
-        self.assertIsNotNone(models.Photo.load(a.photo_id))
-        self.assertEqual(a, models.Photo.load(a.photo_id))
+    @mock.patch('teine.dynamo.update')
+    def test_save(self, mocked_update):
+        photo = self.predefined[0]
+        result = photo.save()
+        self.assertEqual(photo, result)
+        mocked_update.assert_called_with(photo.table_name, photo.export())
 
-        a.delete()
-        self.assertIsNone(models.Photo.load(a.photo_id))
+    @mock.patch('teine.dynamo.delete')
+    def test_delete(self, mocked_delete):
+        photo = self.predefined[0]
+        result = photo.delete()
+        self.assertTrue(result)
+        mocked_delete.assert_called_with(
+            photo.table_name, photo_id=photo.photo_id)
 
 
 class TestPersonality(unittest.TestCase):

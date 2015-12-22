@@ -340,13 +340,14 @@ class Photo():
         return None
 
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, photo_id, owner_user_id, thumbnail_id, filename,
+               size=None, content_type=None, datetime=None):
         """
         Constructs an (unsaved) 'Photo' instance.
         To persist the data, you need to call 'Photo.save' on the instance.
         """
-        return cls(photo_id=str(uuid.uuid4()),
-                   datetime=datetime.datetime.utcnow().isoformat(), **kwargs)
+        return cls(photo_id, owner_user_id, thumbnail_id, filename, size,
+                   content_type, datetime)
 
     @classmethod
     def load_all(cls, user_id):
@@ -374,7 +375,7 @@ class Photo():
         Deletes this Photo from database
         """
         dynamo.delete(self.table_name, photo_id=self.photo_id)
-        return self
+        return True
 
 
 class Personality():

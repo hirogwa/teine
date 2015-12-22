@@ -1,3 +1,4 @@
+from datetime import datetime
 from PIL import Image
 import os
 import uuid
@@ -31,9 +32,11 @@ def create(user, uploaded_file):
         'content_type': uploaded_file.headers.get('Content-Type'),
         'size': os.stat(temp_f).st_size
     }
-    photo = models.Photo.create(owner_user_id=user.user_id,
+    photo = models.Photo.create(photo_id=str(uuid.uuid4()),
+                                owner_user_id=user.user_id,
                                 thumbnail_id=thumbnail_id,
                                 filename=uploaded_file.filename,
+                                datetime=datetime.utcnow().isoformat(),
                                 **photo_info)
 
     s3_store.set_key_public_read(photo.photo_id, temp_f)
