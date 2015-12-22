@@ -508,25 +508,26 @@ class User():
     def primary_show_id(self):
         return self.show_ids[0] if len(self.show_ids) else None
 
-    def export(self):
+    def export(self, expand_password=False):
         """
         Returns the dictionary representation of this User
         """
-        return {
+        result = {
             'user_id': self.user_id,
             'first_name': self.first_name,
             'last_name': self.last_name,
             'email': self.email,
             'show_ids': self.show_ids
         }
+        if expand_password:
+            result['password'] = self.password
+        return result
 
     def save(self):
         """
         Saves this User to database
         """
-        data = self.export()
-        data['password'] = self.password
-        dynamo.update(self.table_name, data)
+        dynamo.update(self.table_name, self.export(True))
         return self
 
     def delete(self):
@@ -534,7 +535,7 @@ class User():
         Deletes this User from database
         '''
         dynamo.delete(self.table_name, user_id=self.user_id)
-        return self
+        return True
 
     def is_authenticated(self):
         '''

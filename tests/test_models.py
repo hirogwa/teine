@@ -1,32 +1,7 @@
 from unittest import mock
-import inspect
-import time
 import unittest
 
-from teine import dynamo, models
-
-
-def setUpModule():
-    dynamo.init_test()
-    for c in _classes_with_tables():
-        print('Creating table for {}...'.format(c.__name__))
-        dynamo.create_table(c.table_name, c.hash_key,
-                            getattr(c, 'range_key', None),
-                            getattr(c, 'secondary_indexes', []))
-
-    print('Allowing 10 seconds for table creation...')
-    time.sleep(10)
-
-
-def tearDownModule():
-    for c in _classes_with_tables():
-        print('Deleting table for {}...'.format(c.__name__))
-        dynamo.delete_table(c.table_name)
-
-
-def _classes_with_tables():
-    return [cls for name, cls in inspect.getmembers(models)
-            if inspect.isclass(cls) and hasattr(cls, 'table_name')]
+from teine import models
 
 
 class TestShow(unittest.TestCase):
@@ -320,37 +295,65 @@ class TestUser(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.predefined.append(models.User(
-            user_id='user',
-            password='hashedPass',
-            first_name='firstName',
-            last_name='lastName',
-            email='email',
+            user_id='user01',
+            password='hashedPass01',
+            first_name='firstName01',
+            last_name='lastName01',
+            email='email01',
             show_ids=['show01', 'show02']))
+        cls.predefined.append(models.User(
+            user_id='user02',
+            password='hashedPass02',
+            first_name='firstName02',
+            last_name='lastName02',
+            email='email02',
+            show_ids=[]))
 
-        for x in cls.predefined:
-            x.save()
-
-    @classmethod
-    def tearDownClass(cls):
-        for x in cls.predefined:
-            x.delete()
-
-    def test_load_by_id(self):
+    @mock.patch('teine.dynamo.query')
+    def test_load_by_id(self, mocked_query):
         user = self.predefined[0]
-        self.assertEqual(user, models.User.load(user_id=user.user_id))
-        self.assertEqual(None, models.User.load(user_id='noSuchUserId'))
 
-    def test_load_by_email(self):
+        # found
+        mocked_query.return_value = [user.export(True)]
+        result = models.User.load(user_id=user.user_id)
+        self.assertEqual(user, result)
+
+        # not found
+        mocked_query.return_value = []
+        result = models.User.load(user_id='no such id')
+        self.assertEqual(None, result)
+
+    @mock.patch('teine.dynamo.query')
+    def test_load_by_email(self, mocked_query):
         user = self.predefined[0]
-        self.assertEqual(user, models.User.load(email=user.email))
-        self.assertEqual(None, models.User.load(email='noSuch@example.com'))
 
-    def test_create_and_delete(self):
-        user_id = 'userId'
-        user = models.User.create(user_id, 'hashedPass', 'example@email.com',
-                                  'FirstName', 'LastName')
-        user.save()
-        self.assertIsNotNone(models.User.load(user_id=user_id))
+        # found
+        mocked_query.return_value = [user.export(True)]
+        result = models.User.load(email=user.email)
+        self.assertEqual(user, result)
 
-        user.delete()
-        self.assertIsNone(models.User.load(user_id=user_id))
+        # not found
+        mocked_query.return_value = []
+        result = models.User.load(email='no such email')
+        self.assertEqual(None, result)
+
+    def test_create(self):
+        user = self.predefined[1]
+        result = models.User.create(
+            user.user_id, user.password, user.email, user.first_name,
+            user.last_name)
+        self.assertEqual(user, result)
+
+    @mock.patch('teine.dynamo.update')
+    def test_save(self, mocked_update):
+        user = self.predefined[0]
+        result = user.save()
+        self.assertEqual(user, result)
+        mocked_update.assert_called_with(user.table_name, user.export(True))
+
+    @mock.patch('teine.dynamo.delete')
+    def test_delete(self, mocked_delete):
+        user = self.predefined[0]
+        result = user.delete()
+        self.assertTrue(result)
+        mocked_delete.assert_called_with(user.table_name, user_id=user.user_id)
