@@ -340,13 +340,14 @@ class Photo():
         return None
 
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, photo_id, owner_user_id, thumbnail_id, filename,
+               size=None, content_type=None, datetime=None):
         """
         Constructs an (unsaved) 'Photo' instance.
         To persist the data, you need to call 'Photo.save' on the instance.
         """
-        return cls(photo_id=str(uuid.uuid4()),
-                   datetime=datetime.datetime.utcnow().isoformat(), **kwargs)
+        return cls(photo_id, owner_user_id, thumbnail_id, filename, size,
+                   content_type, datetime)
 
     @classmethod
     def load_all(cls, user_id):
@@ -374,7 +375,7 @@ class Photo():
         Deletes this Photo from database
         """
         dynamo.delete(self.table_name, photo_id=self.photo_id)
-        return self
+        return True
 
 
 class Personality():
@@ -411,17 +412,17 @@ class Personality():
         rs = dynamo.query(cls.table_name, 'show_id', show_id,
                           'twitter_screen_name', screen_name)
         for val in rs:
-            return Personality(**val)
+            return cls(**val)
         return None
 
     @classmethod
-    def create_from_twitter(cls, show_id, screen_name, name='', description='',
-                            profile_image_url=None):
+    def create_from_twitter(cls, personality_id, show_id, screen_name,
+                            name='', description='', profile_image_url=None):
         """
         Constructs an (unsaved) 'Personality' instance.
         To persist the data, you need to call 'Personality.save'
         """
-        return cls(personality_id=str(uuid.uuid4()),
+        return cls(personality_id=personality_id,
                    show_id=show_id,
                    twitter={'screen_name': screen_name,
                             'name': name,
@@ -452,7 +453,7 @@ class Personality():
         Deletes this Personality from database
         '''
         dynamo.delete(self.table_name, personality_id=self.personality_id)
-        return self
+        return True
 
 
 class User():
@@ -507,25 +508,26 @@ class User():
     def primary_show_id(self):
         return self.show_ids[0] if len(self.show_ids) else None
 
-    def export(self):
+    def export(self, expand_password=False):
         """
         Returns the dictionary representation of this User
         """
-        return {
+        result = {
             'user_id': self.user_id,
             'first_name': self.first_name,
             'last_name': self.last_name,
             'email': self.email,
             'show_ids': self.show_ids
         }
+        if expand_password:
+            result['password'] = self.password
+        return result
 
     def save(self):
         """
         Saves this User to database
         """
-        data = self.export()
-        data['password'] = self.password
-        dynamo.update(self.table_name, data)
+        dynamo.update(self.table_name, self.export(True))
         return self
 
     def delete(self):
@@ -533,7 +535,7 @@ class User():
         Deletes this User from database
         '''
         dynamo.delete(self.table_name, user_id=self.user_id)
-        return self
+        return True
 
     def is_authenticated(self):
         '''
