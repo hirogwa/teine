@@ -49,7 +49,7 @@ class TestOperationsCommon(unittest.TestCase):
         for i in range(len(self.predefined)):
             p = self.predefined[i]
             models.Personality.find_by_twitter.assert_any_call(
-                p.twitter_screen_name, p.show_id)
+                p.show_id, p.twitter_screen_name)
 
     @mock.patch.object(models.Personality, 'create_from_twitter')
     @mock.patch.object(models.Personality, 'find_by_twitter')

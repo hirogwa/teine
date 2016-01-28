@@ -132,7 +132,7 @@ class TestEpisode(unittest.TestCase):
         result = models.Episode.create(
             episode.episode_id, episode.show_id, episode.title,
             episode.summary, episode.description, episode.media_id,
-            episode.guest_ids, episode.links, episode.status)
+            episode.host_ids, episode.guest_ids, episode.links, episode.status)
         self.assertEqual(episode, result)
 
     @mock.patch('teine.dynamo.update')
@@ -237,6 +237,8 @@ class TestPersonality(unittest.TestCase):
         cls.predefined.append(models.Personality(
             personality_id='personality01',
             show_id='show01',
+            name='some_test_name',
+            description='some_test_desc',
             twitter={
                 'screen_name': 'some_test_screen_name',
                 'name': 'some_test_name',
@@ -259,7 +261,8 @@ class TestPersonality(unittest.TestCase):
         personality = self.predefined[0]
         mocked_query.return_value = [personality.export()]
         result = models.Personality.find_by_twitter(
-            personality.twitter_screen_name, personality.show_id)
+            personality.show_id,
+            personality.twitter_screen_name)
         self.assertEqual(personality, result)
         mocked_query.assert_called_with(
             personality.table_name, 'show_id', personality.show_id,

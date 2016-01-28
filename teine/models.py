@@ -161,13 +161,14 @@ class Episode():
 
     @classmethod
     def create(cls, episode_id, show_id, title='', summary='', description='',
-               media_id=None, guest_ids=[], links=[], status=None):
+               media_id=None, host_ids=[],  guest_ids=[], links=[],
+               status=None):
         """
         Constructs an unsaved 'Episode' instance.
         To persist the data, you need to call 'Episode.save' on the instance
         """
         return cls(episode_id, show_id, title, summary, description, media_id,
-                   guest_ids, links, status)
+                   host_ids, guest_ids, links, status)
 
     def export(self, expand=[]):
         """
@@ -397,7 +398,8 @@ class Personality():
         return self.__dict__ == another.__dict__
 
     def __init__(self, personality_id, show_id, name, description,
-                 twitter=None, episodes_as_host=[], episodes_as_guest=[]):
+                 twitter=None, episodes_as_host=[], episodes_as_guest=[],
+                 **kwargs):
         self.personality_id = personality_id
         self.show_id = show_id
         self.name = name
@@ -423,7 +425,7 @@ class Personality():
         return None
 
     @classmethod
-    def find_by_twitter(cls, screen_name, show_id):
+    def find_by_twitter(cls, show_id, screen_name):
         """
         Like the 'load' method, but by twitter information instead of id
         """
@@ -453,6 +455,8 @@ class Personality():
         return {
             'personality_id': self.personality_id,
             'show_id': self.show_id,
+            'name': self.name,
+            'description': self.description,
             'twitter_screen_name': (
                 self.twitter.get('screen_name') if self.twitter else None),
             'twitter': self.twitter

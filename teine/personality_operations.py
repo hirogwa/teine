@@ -1,5 +1,6 @@
 import uuid
-from teine import models, externals, episode_operations, operations_common
+import teine
+from teine import models, externals, operations_common
 
 
 def get_or_create(show_id, source, screen_name):
@@ -115,9 +116,11 @@ def delete(personality_id):
             'Personality not found with id:{}'.format(personality_id))
 
     for episode_id in personality.episodes_as_guest:
-        episode_operations.remove_guest(episode_id, personality.personality_id)
+        teine.episode_operations.remove_guest(
+            episode_id, personality.personality_id)
     for episode_id in personality.episodes_as_host:
-        episode_operations.remove_host(episode_id, personality.personality_id)
+        teine.episode_operations.remove_host(
+            episode_id, personality.personality_id)
     personality.delete()
 
 
@@ -130,9 +133,9 @@ def people_to_ids(show_id, people_data):
     :type people_data: list of dict with attributes "source" and "screen_name"
     :returns: The list of the corresponding personality ids
     '''
-    return map(lambda x: get_or_create(
+    return list(map(lambda x: get_or_create(
         show_id, x.get('source'), x.get('screen_name')
-    ).personality_id, people_data)
+    ).personality_id, people_data))
 
 
 def _store_profile_image(personality):

@@ -2,7 +2,7 @@ from unittest import mock
 import unittest
 import uuid
 
-from teine import models, episode_operations, operations_common
+from teine import models, episode_operations, personality_operations
 
 
 class TestEpisodeOperation(unittest.TestCase):
@@ -52,10 +52,14 @@ class TestEpisodeOperation(unittest.TestCase):
         models.Episode.load_all.assert_called_with(self.show_id_one)
         self.assertEqual(expected, actual)
 
-    @mock.patch.object(operations_common, 'host_ids')
+    @mock.patch.object(personality_operations, 'add_guest_to_episode')
+    @mock.patch.object(personality_operations, 'add_host_to_episode')
+    @mock.patch.object(personality_operations, 'people_to_ids')
     @mock.patch.object(models.Media, 'load')
     @mock.patch.object(models.Episode, 'load')
-    def test_update(self, mock_episode_load, mock_media_load, mock_host_ids):
+    def test_update(self, mock_episode_load, mock_media_load,
+                    mock_people_to_ids, mock_add_host_to_episode,
+                    mock_add_guest_to_episode):
         media_before = models.Media(
             media_id='mediaId01',
             owner_user_id=self.user.user_id,
@@ -72,7 +76,8 @@ class TestEpisodeOperation(unittest.TestCase):
                                summary='summary',
                                description='description',
                                media_id=media_before.media_id,
-                               guest_ids=['someGuest', 'anotherGuest'],
+                               host_ids=['someone', 'another'],
+                               guest_ids=['someone', 'another'],
                                links=[], status='someStatus')
 
         def media_load(media_id):
@@ -80,29 +85,36 @@ class TestEpisodeOperation(unittest.TestCase):
                 return media_before
             if media_id == after.media_id:
                 return media_after
-            raise ValueError
+            raise ValueError('Unexpected test input')
 
         mock_episode_load.return_value = before
         mock_media_load.side_effect = media_load
         media_before.save = mock.MagicMock(return_value=media_before)
-        mock_host_ids.return_value = after.guest_ids
+        mock_people_to_ids.return_value = after.guest_ids
         media_after.save = mock.MagicMock(return_value=media_after)
         before.save = mock.MagicMock(return_value=before)
 
+        people_data_host = []
+        people_data_guest = []
         actual = episode_operations.update(
             before.episode_id, after.title, after.summary, after.description,
-            after.media_id, [], [], after.status)
+            after.media_id, people_data_host, people_data_guest, [],
+            after.status)
 
         models.Episode.load.assert_called_with(before.episode_id)
         models.Media.load.assert_called_with(before.media_id)
         media_before.save.assert_called_with()
-        operations_common.host_ids.assert_called_with(before.show_id, [])
+        mock_people_to_ids.assert_called_with(before.show_id,
+                                              people_data_host)
+        mock_people_to_ids.assert_called_with(before.show_id,
+                                              people_data_guest)
         models.Media.load.assert_called_with(after.media_id)
         self.assertEqual(after.episode_id, actual.episode_id)
         self.assertEqual(after.show_id, actual.show_id)
         self.assertEqual(after.title, actual.title)
         self.assertEqual(after.summary, actual.summary)
         self.assertEqual(after.description, actual.description)
+        self.assertEqual(after.host_ids, actual.host_ids)
         self.assertEqual(after.guest_ids, actual.guest_ids)
         self.assertEqual(after.links, actual.links)
         self.assertEqual(after.status, actual.status)
@@ -115,12 +127,12 @@ class TestEpisodeOperation(unittest.TestCase):
             episode_operations.update(episode_id)
             models.Episode.load.assert_called_with(episode_id)
 
+    @mock.patch.object(personality_operations, 'people_to_ids')
     @mock.patch.object(models.Media, 'load')
-    @mock.patch.object(operations_common, 'host_ids')
     @mock.patch.object(models.Episode, 'load')
     @mock.patch.object(models.Episode, 'create')
     def test_create_and_delete(self, mock_episode_create, mock_episode_load,
-                               mock_host_ids, mock_media_load):
+                               mock_media_load, mock_people_to_ids):
         # Create
         media = models.Media(
             media_id='mediaId',
@@ -133,25 +145,28 @@ class TestEpisodeOperation(unittest.TestCase):
                                   summary='summary',
                                   description='description',
                                   media_id=media.media_id,
-                                  guest_ids=['someGuest', 'anotherGuest'],
+                                  host_ids=['someone', 'another'],
+                                  guest_ids=['someone', 'another'],
                                   links=[], status='someStatus')
 
         uuid.uuid4 = mock.MagicMock(return_value=expected.episode_id)
         mock_episode_create.return_value = expected
-        mock_host_ids.return_value = expected.guest_ids
+        mock_people_to_ids.return_value = expected.guest_ids
         mock_media_load.return_value = media
         media.save = mock.MagicMock(return_value=media)
         expected.save = mock.MagicMock(return_value=expected)
 
+        people_data = []
         actual = episode_operations.create(
             expected.show_id, expected.title, expected.summary,
-            expected.description, expected.media_id, [], [], expected.status)
+            expected.description, expected.media_id, people_data,
+            people_data, status=expected.status)
 
         models.Episode.create.assert_called_with(
             expected.episode_id, expected.show_id, expected.title,
             expected.summary, expected.description, expected.media_id,
-            expected.guest_ids, expected.links, expected.status)
-        operations_common.host_ids.assert_called_with(expected.show_id, [])
+            status=expected.status)
+        mock_people_to_ids.assert_called_with(expected.show_id, people_data)
         models.Media.load.assert_called_with(expected.media_id)
         media.save.assert_called_with()
         expected.save.assert_called_with()
