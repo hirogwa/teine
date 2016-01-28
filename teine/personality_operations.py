@@ -5,7 +5,7 @@ from teine import models, externals, operations_common
 
 def get_or_create(show_id, source, screen_name):
     '''
-    Attempts to find an personality within the show
+    Attempts to find a personality within the show
     by twitter screen name, and creates it if it does not exists
     '''
     if not source == models.Personality.SOURCE.twitter.name:
