@@ -252,5 +252,20 @@ class TestPersonalityOperations(unittest.TestCase):
             ep_id_as_guest, p.personality_id)
         p.delete.assert_called_with()
 
-    def test_people_to_ids(self):
-        self.assertTrue(False)
+    @mock.patch.object(personality_operations, 'get_or_create')
+    def test_people_to_ids(self, mock_get_or_create):
+        show_id = 's_id'
+        people_data = [{
+            'source': 'twitter',
+            'screen_name': 'testname01'
+        }]
+        p = self._personality_generic()
+        mock_get_or_create.return_value = p
+
+        result = personality_operations.people_to_ids(show_id, people_data)
+
+        mock_get_or_create.assert_called_with(
+            show_id,
+            people_data[0].get('source'),
+            people_data[0].get('screen_name'))
+        self.assertEqual(result[0], p.personality_id)
