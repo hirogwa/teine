@@ -1,9 +1,31 @@
 import unittest
 from unittest import mock
-from teine import personality_operations, models, externals, operations_common
+from teine import (personality_operations, models, externals,
+                   operations_common, episode_operations)
 
 
 class TestPersonalityOperations(unittest.TestCase):
+    @classmethod
+    def _twitter_user_generic(cls, screen_name='twitter_user_screen_name'):
+        '''
+        Returns twitter user data for generic purpose
+        '''
+        return {
+            'screen_name': screen_name,
+            'name': 'twitter user name',
+            'description': 'twitter user description',
+            'profile_image_url': 'twitter user image'
+        }
+
+    @classmethod
+    def _personality_generic(cls, personality_id='p_id', episodes_as_host=[],
+                             episodes_as_guest=[]):
+        return models.Personality(
+            personality_id, 'show_id', 'name', 'description',
+            twitter=cls._twitter_user_generic(),
+            episodes_as_host=episodes_as_host,
+            episodes_as_guest=episodes_as_guest)
+
     def test_get_or_create_non_twitter(self):
         with self.assertRaises(ValueError):
             personality_operations.get_or_create(
@@ -19,12 +41,7 @@ class TestPersonalityOperations(unittest.TestCase):
         source = 'twitter'
         screen_name = 'testuser'
 
-        twitter_user = {
-            'screen_name': screen_name,
-            'name': 'newName',
-            'description': 'newDescription',
-            'profile_image_url': 'newImage'
-        }
+        twitter_user = self._twitter_user_generic(screen_name)
         p = models.Personality(
             'id', 'showId', 'name', 'description', twitter={
                 'screen_name': screen_name,
@@ -61,12 +78,7 @@ class TestPersonalityOperations(unittest.TestCase):
         source = 'twitter'
         screen_name = 'testuser'
 
-        twitter_user = {
-            'screen_name': screen_name,
-            'name': 'newName',
-            'description': 'newDescription',
-            'profile_image_url': 'newImage'
-        }
+        twitter_user = self._twitter_user_generic(screen_name)
         p_expected = models.Personality(
             'id', show_id, twitter_user.get('name'),
             twitter_user.get('description'), twitter=twitter_user)
@@ -88,35 +100,157 @@ class TestPersonalityOperations(unittest.TestCase):
             p_expected.personality_id)
         self.assertEqual(p_created, p_expected)
 
-    def test_add_host_to_episode_host_not_found(self):
-        self.assertTrue(False)
+    @mock.patch.object(models.Personality, 'load')
+    def test_add_host_to_episode_host_not_found(self, mock_personality_load):
+        personality_id = 'p_id'
+        episode_id = 'ep_id'
+        mock_personality_load.return_value = None
+        with self.assertRaises(ValueError):
+            personality_operations.add_host_to_episode(
+                personality_id, episode_id)
+        mock_personality_load.assert_called_with(personality_id)
 
-    def test_add_host_to_episode(self):
-        self.assertTrue(False)
+    @mock.patch.object(models.Personality, 'load')
+    def test_add_host_to_episode_duplicate(self, mock_personality_load):
+        episode_id = 'ep_id'
+        p = self._personality_generic(episodes_as_host=[episode_id])
+        p.save = mock.MagicMock(return_value=p)
+        mock_personality_load.return_value = p
 
-    def test_remove_host_from_episode_host_not_found(self):
-        self.assertTrue(False)
+        personality_operations.add_host_to_episode(
+            p.personality_id, episode_id)
 
-    def test_remove_host_from_episode(self):
-        self.assertTrue(False)
+        mock_personality_load.assert_called_with(p.personality_id)
+        self.assertEqual(1, len(p.episodes_as_host))
 
-    def test_add_guest_to_episode_guest_not_found(self):
-        self.assertTrue(False)
+    @mock.patch.object(models.Personality, 'load')
+    def test_add_host_to_episode(self, mock_personality_load):
+        episode_id = 'ep_id'
+        p = self._personality_generic()
+        p.save = mock.MagicMock(return_value=p)
+        mock_personality_load.return_value = p
 
-    def test_add_guest_to_episode(self):
-        self.assertTrue(False)
+        personality_operations.add_host_to_episode(
+            p.personality_id, episode_id)
 
-    def test_remove_guest_from_episode_guest_not_found(self):
-        self.assertTrue(False)
+        mock_personality_load.assert_called_with(p.personality_id)
+        self.assertIn(episode_id, p.episodes_as_host)
 
-    def test_remove_guest_from_episode(self):
-        self.assertTrue(False)
+    @mock.patch.object(models.Personality, 'load')
+    def test_remove_host_from_episode_host_not_found(
+            self, mock_personality_load):
+        personality_id = 'p_id'
+        episode_id = 'ep_id'
+        mock_personality_load.return_value = None
+        with self.assertRaises(ValueError):
+            personality_operations.remove_host_from_episode(
+                personality_id, episode_id)
+        mock_personality_load.assert_called_with(personality_id)
 
-    def test_delete_target_not_found(self):
-        self.assertTrue(False)
+    @mock.patch.object(models.Personality, 'load')
+    def test_remove_host_from_episode(self, mock_personality_load):
+        episode_id = 'ep_id'
+        p = self._personality_generic(episodes_as_host=[episode_id])
+        p.save = mock.MagicMock(return_value=p)
+        mock_personality_load.return_value = p
 
-    def test_delete(self):
-        self.assertTrue(False)
+        personality_operations.remove_host_from_episode(
+            p.personality_id, episode_id)
+
+        mock_personality_load.assert_called_with(p.personality_id)
+        self.assertNotIn(episode_id, p.episodes_as_host)
+        self.assertEqual(0, len(p.episodes_as_host))
+
+    @mock.patch.object(models.Personality, 'load')
+    def test_add_guest_to_episode_guest_not_found(self, mock_personality_load):
+        personality_id = 'p_id'
+        episode_id = 'ep_id'
+        mock_personality_load.return_value = None
+
+        with self.assertRaises(ValueError):
+            personality_operations.add_guest_to_episode(
+                personality_id, episode_id)
+        mock_personality_load.assert_called_with(personality_id)
+
+    @mock.patch.object(models.Personality, 'load')
+    def test_add_guest_to_episode_duplicate(self, mock_personality_load):
+        episode_id = 'ep_id'
+        p = self._personality_generic(episodes_as_guest=[episode_id])
+        p.save = mock.MagicMock(return_value=p)
+        mock_personality_load.return_value = p
+
+        personality_operations.add_guest_to_episode(
+            p.personality_id, episode_id)
+
+        mock_personality_load.assert_called_with(p.personality_id)
+        self.assertEqual(1, len(p.episodes_as_guest))
+
+    @mock.patch.object(models.Personality, 'load')
+    def test_add_guest_to_episode(self, mock_personality_load):
+        episode_id = 'ep_id'
+        p = self._personality_generic()
+        p.save = mock.MagicMock(return_value=p)
+        mock_personality_load.return_value = p
+
+        personality_operations.add_guest_to_episode(
+            p.personality_id, episode_id)
+
+        mock_personality_load.assert_called_with(p.personality_id)
+        self.assertIn(episode_id, p.episodes_as_guest)
+
+    @mock.patch.object(models.Personality, 'load')
+    def test_remove_guest_from_episode_guest_not_found(
+            self, mock_personality_load):
+        personality_id = 'p_id'
+        episode_id = 'ep_id'
+        mock_personality_load.return_value = None
+
+        with self.assertRaises(ValueError):
+            personality_operations.remove_guest_from_episode(
+                personality_id, episode_id)
+        mock_personality_load.assert_called_with(personality_id)
+
+    @mock.patch.object(models.Personality, 'load')
+    def test_remove_guest_from_episode(self, mock_personality_load):
+        episode_id = 'ep_id'
+        p = self._personality_generic(episodes_as_guest=[episode_id])
+        p.save = mock.MagicMock(return_value=p)
+        mock_personality_load.return_value = p
+
+        personality_operations.remove_guest_from_episode(
+            p.personality_id, episode_id)
+
+        mock_personality_load.assert_called_with(p.personality_id)
+        self.assertNotIn(episode_id, p.episodes_as_guest)
+        self.assertEqual(0, len(p.episodes_as_guest))
+
+    @mock.patch.object(models.Personality, 'load')
+    def test_delete_target_not_found(self, mock_personality_load):
+        personality_id = 'p_id'
+        mock_personality_load.return_value = None
+        with self.assertRaises(ValueError):
+            personality_operations.delete(personality_id)
+        mock_personality_load.assert_called_with(personality_id)
+
+    @mock.patch.object(episode_operations, 'remove_host')
+    @mock.patch.object(episode_operations, 'remove_guest')
+    @mock.patch.object(models.Personality, 'load')
+    def test_delete(self, mock_personality_load,
+                    mock_episode_remove_guest, mock_episode_remove_host):
+        ep_id_as_host = 'ep_id_host'
+        ep_id_as_guest = 'ep_id_guest'
+        p = self._personality_generic(episodes_as_host=[ep_id_as_host],
+                                      episodes_as_guest=[ep_id_as_guest])
+        p.delete = mock.MagicMock(return_value=None)
+        mock_personality_load.return_value = p
+
+        personality_operations.delete(p.personality_id)
+
+        mock_episode_remove_host.assert_called_with(
+            ep_id_as_host, p.personality_id)
+        mock_episode_remove_guest.assert_called_with(
+            ep_id_as_guest, p.personality_id)
+        p.delete.assert_called_with()
 
     def test_people_to_ids(self):
         self.assertTrue(False)
