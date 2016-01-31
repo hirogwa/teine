@@ -1,3 +1,4 @@
+from enum import Enum
 import datetime
 import uuid
 
@@ -109,8 +110,8 @@ class Episode():
         return self.__dict__ == another.__dict__
 
     def __init__(self, episode_id, show_id, title='', summary='',
-                 description='', media_id=None, guest_ids=[], links=[],
-                 status=None, **kwargs):
+                 description='', media_id=None, host_ids=[], guest_ids=[],
+                 links=[], status=None, **kwargs):
         """
         Sets up a new in-memory 'Episode' by accessing database for
         an existing episode_id
@@ -124,6 +125,8 @@ class Episode():
         self._media = None
         self.guest_ids = guest_ids
         self.guests = []
+        self.host_ids = host_ids
+        self.hosts = []
         self.links = links
         self.status = status
 
@@ -158,13 +161,14 @@ class Episode():
 
     @classmethod
     def create(cls, episode_id, show_id, title='', summary='', description='',
-               media_id=None, guest_ids=[], links=[], status=None):
+               media_id=None, host_ids=[],  guest_ids=[], links=[],
+               status=None):
         """
         Constructs an unsaved 'Episode' instance.
         To persist the data, you need to call 'Episode.save' on the instance
         """
         return cls(episode_id, show_id, title, summary, description, media_id,
-                   guest_ids, links, status)
+                   host_ids, guest_ids, links, status)
 
     def export(self, expand=[]):
         """
@@ -192,6 +196,11 @@ class Episode():
                 self.guests = map(
                     lambda x: Personality.load(x), self.guest_ids)
             ret['guests'] = list(map(lambda x: x.export(), self.guests))
+        if 'hosts' in expand:
+            if not self.hosts:
+                self.hosts = map(
+                    lambda x: Personality.load(x), self.host_ids)
+            ret['hosts'] = list(map(lambda x: x.export(), self.hosts))
         if 'links' in expand:
             ret['links'] = list(map(lambda x: x.export(), self.links))
         return ret
@@ -383,15 +392,26 @@ class Personality():
     hash_key = 'personality_id'
     secondary_indexes = [('show_id', 'twitter_screen_name',)]
 
+    SOURCE = Enum('Source', 'twitter')
+
     def __eq__(self, another):
         return self.__dict__ == another.__dict__
 
-    def __init__(self, personality_id, show_id, twitter=None, **kwargs):
+    def __init__(self, personality_id, show_id, name, description,
+                 twitter=None, episodes_as_host=[], episodes_as_guest=[],
+                 **kwargs):
         self.personality_id = personality_id
         self.show_id = show_id
+        self.name = name
+        self.description = description
         self.twitter = twitter
-        self.twitter_screen_name = (
-            twitter.get('screen_name') if twitter else None)
+        self.episodes_as_host = episodes_as_host
+        self.episodes_as_guest = episodes_as_guest
+        if twitter:
+            self.source = self.SOURCE.twitter
+            self.twitter_screen_name = twitter.get('screen_name')
+        else:
+            raise ValueError('Unsupported source')
 
     @classmethod
     def load(cls, personality_id):
@@ -405,7 +425,7 @@ class Personality():
         return None
 
     @classmethod
-    def find_by_twitter(cls, screen_name, show_id):
+    def find_by_twitter(cls, show_id, screen_name):
         """
         Like the 'load' method, but by twitter information instead of id
         """
@@ -417,13 +437,12 @@ class Personality():
 
     @classmethod
     def create_from_twitter(cls, personality_id, show_id, screen_name,
-                            name='', description='', profile_image_url=None):
+                            name, description, profile_image_url):
         """
         Constructs an (unsaved) 'Personality' instance.
         To persist the data, you need to call 'Personality.save'
         """
-        return cls(personality_id=personality_id,
-                   show_id=show_id,
+        return cls(personality_id, show_id, name, description,
                    twitter={'screen_name': screen_name,
                             'name': name,
                             'description': description,
@@ -436,6 +455,8 @@ class Personality():
         return {
             'personality_id': self.personality_id,
             'show_id': self.show_id,
+            'name': self.name,
+            'description': self.description,
             'twitter_screen_name': (
                 self.twitter.get('screen_name') if self.twitter else None),
             'twitter': self.twitter

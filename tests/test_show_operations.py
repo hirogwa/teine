@@ -2,7 +2,7 @@ from unittest import mock
 import unittest
 import uuid
 
-from teine import dynamo, models, show_operations, operations_common
+from teine import dynamo, models, show_operations, personality_operations
 
 
 def setUpModule():
@@ -51,10 +51,10 @@ class TestShowOperations(unittest.TestCase):
         self.assertEqual(show, show_operations.get_by_id(show_id))
         models.Show.load.assert_called_with(show_id)
 
+    @mock.patch.object(personality_operations, 'people_to_ids')
     @mock.patch.object(models.Show, 'create')
-    @mock.patch.object(operations_common, 'host_ids')
     @mock.patch.object(uuid, 'uuid4')
-    def test_create(self, mock_uuid, mock_host_ids, mock_show_create):
+    def test_create(self, mock_uuid, mock_show_create, mock_people_to_ids):
         args = {
             'show_id': 'newShowId',
             'owner_user_id': self.user.user_id,
@@ -69,16 +69,18 @@ class TestShowOperations(unittest.TestCase):
         expected = models.Show(**args)
 
         mock_uuid.return_value = args['show_id']
-        mock_host_ids.return_value = args['show_host_ids']
+        mock_people_to_ids.return_value = args['show_host_ids']
         mock_show_create.return_value = expected
         expected.save = mock.MagicMock(return_value=expected)
 
+        people_data = []
         actual = show_operations.create(
             self.user, args['title'], args['author'], args['tagline'],
-            args['description'], [], args['image_id'], args['language'])
+            args['description'], people_data, args['image_id'],
+            args['language'])
 
         uuid.uuid4.assert_called_with()
-        operations_common.host_ids.assert_called_with(args['show_id'], [])
+        mock_people_to_ids.assert_called_with(args['show_id'], people_data)
         models.Show.create.assert_called_with(
             show_id=args['show_id'],
             owner_user_id=args['owner_user_id'],
@@ -108,9 +110,9 @@ class TestShowOperations(unittest.TestCase):
             self.user, title=show_operations.DEFAULT_SHOW_TITLE,
             author=self.user.user_id)
 
+    @mock.patch.object(personality_operations, 'people_to_ids')
     @mock.patch.object(models.Show, 'load')
-    @mock.patch.object(operations_common, 'host_ids')
-    def test_update(self, mock_host_ids, mock_show_load):
+    def test_update(self, mock_show_load, mock_people_to_ids):
         before = self.predefined[0]
         after_args = {
             'show_id': before.show_id,
@@ -125,19 +127,20 @@ class TestShowOperations(unittest.TestCase):
         }
         after = models.Show(**after_args)
 
-        mock_host_ids.return_value = after_args['show_host_ids']
+        mock_people_to_ids.return_value = after_args['show_host_ids']
         mock_show_load.return_value = before
         before.save = mock.MagicMock(return_value=before)
 
+        people_data = []
         after_actual = show_operations.update(
             before.show_id, after_args['title'],
             after_args['author'], after_args['tagline'],
-            after_args['description'], [], after_args['image_id'],
+            after_args['description'], people_data, after_args['image_id'],
             after_args['language'])
 
         models.Show.load.assert_called_with(after_args['show_id'])
-        operations_common.host_ids.assert_called_with(
-            after_args['show_id'], [])
+        mock_people_to_ids.assert_called_with(
+            after_args['show_id'], people_data)
         before.save.assert_called_with()
 
         self.assertEqual(after.show_id, after_actual.show_id)
