@@ -6,3 +6,4 @@ temp
 settings.py
 testdata
 teine/static/*-bundle.*
+*.pyc
